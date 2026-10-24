@@ -60,10 +60,29 @@ def parse_sensor_line(raw):
     return dict(zip(SENSOR_FIELDS, values))
 
 
-def countdown(seconds):
-    for remaining in range(seconds, 0, -1):
-        print(f"Starting in {remaining}...")
-        time.sleep(1)
+
+def countdown(seconds, connection):
+    print(f"\nStarting in {seconds} seconds...")
+
+    start = time.monotonic()
+    last_remaining = seconds + 1
+
+    while True:
+        elapsed = time.monotonic() - start
+        remaining = max(0, seconds - int(elapsed))
+
+        if remaining != last_remaining and remaining > 0:
+            print(f"{remaining}...")
+            last_remaining = remaining
+
+        if elapsed >= seconds:
+            break
+
+        # Consume old samples during preparation.
+        connection.readline()
+
+    # Discard any partial or remaining buffered data.
+    connection.reset_input_buffer()
 
 
 def record_trial(
@@ -74,8 +93,6 @@ def record_trial(
     repetition,
     duration,
 ):
-    # Discard samples collected during the countdown.
-    connection.reset_input_buffer()
 
     print(f"\nGO! {label} — repetition {repetition}")
 
@@ -107,6 +124,12 @@ def record_trial(
             if sequence > expected:
                 missing += sequence - expected
 
+                if sequence - expected > 10:
+                    print(
+                        f"WARNING: Large sequence gap "
+                        f"({sequence - expected} samples). "
+                        "Consider repeating this trial."
+                    )
         previous_sequence = sequence
 
         if first is None:
@@ -273,7 +296,7 @@ def main():
                     f"({repetition}/{args.reps})"
                 )
 
-                countdown(3)
+                countdown(3, connection)
 
                 record_trial(
                     connection,
