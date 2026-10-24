@@ -9,12 +9,52 @@
 // or closes). A press can produce several messages (multiple frames relaying,
 // or controller button bounce); we ignore any that arrive within this window
 // of the last action.
+importScripts('apps.js');
 const INPUT_COOLDOWN_MS = 200;
 let lastInputTime = 0;
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
     if (!msg) return;
+    
+    // GestureControl TV navigation.
+    // Only respond to messages from a webpage
+    // containing our extension's content script.
+    if (msg.type === 'MYO_HOME' ||
+        msg.type === 'MYO_APP') {
 
+        if (!sender.tab ||
+            typeof sender.tab.id !== 'number') {
+            return;
+        }
+
+        let url = null;
+
+        if (msg.type === 'MYO_HOME') {
+            url = chrome.runtime.getURL('launcher.html');
+        } else {
+            const app = MYO_APPS.find(
+                (item) => item.id === msg.appId
+            );
+
+            if (app) {
+                url = app.url;
+            }
+        }
+
+        if (url) {
+            chrome.tabs.update(
+                sender.tab.id,
+                { url }
+            ).catch((error) => {
+                console.error(
+                    'GestureControl navigation failed',
+                    error
+                );
+            });
+        }
+
+        return;
+    }
     const now = Date.now();
     console.log('Last input time and now:', lastInputTime, now);
     if (now - lastInputTime < INPUT_COOLDOWN_MS) return;

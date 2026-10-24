@@ -134,6 +134,50 @@
         }
 
         const input = target;
+   
+        const host = window.location.hostname
+            .replace(/^www\./, '');
+
+        const query = typeof input.value === 'string'
+            ? input.value.trim()
+            : '';
+
+        const isSearchField = input.matches(
+            'textarea[name="q"], ' +
+            'input[name="q"], ' +
+            'input[name="search_query"], ' +
+            'input#search, ' +
+            'input[data-uia="search-box-input"]'
+        );
+
+        if (query && isSearchField) {
+            const encoded = encodeURIComponent(query);
+
+            if (host === 'google.com') {
+                close();
+                window.location.assign(
+                    `https://www.google.com/search?q=${encoded}`
+                );
+                return;
+            }
+
+            if (host === 'youtube.com') {
+                close();
+                window.location.assign(
+                    `https://www.youtube.com/results?search_query=${encoded}`
+                );
+                return;
+            }
+
+            if (host === 'netflix.com') {
+                close();
+                window.location.assign(
+                    `https://www.netflix.com/search?q=${encoded}`
+                );
+                return;
+            }
+        }
+
 
         // Hide the virtual keyboard and restore
         // focus to the original text field.

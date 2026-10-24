@@ -2,6 +2,25 @@ const toggle = document.getElementById('enable-toggle');
 const domainText = document.getElementById('domain-name');
 const statusText = document.getElementById('status-text');
 const versionText = document.getElementById('extension-version');
+const openTvButton = document.getElementById('open-tv');
+
+openTvButton.addEventListener('click', async () => {
+    openTvButton.disabled = true;
+
+    try {
+        await chrome.windows.create({
+            url: chrome.runtime.getURL('launcher.html'),
+            type: 'normal',
+            state: 'fullscreen',
+            focused: true
+        });
+
+        window.close();
+    } catch (error) {
+        console.error('Failed to open GestureControl TV', error);
+        openTvButton.disabled = false;
+    }
+});
 
 let currentDomain = '';
 let currentTabId = null;

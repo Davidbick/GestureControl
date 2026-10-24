@@ -40,7 +40,12 @@
             '.slider-refocus',
             '.handleNext[role="button"]',
             '.handlePrev[role="button"]',
-            '.member-footer-link'
+            '.member-footer-link',
+            '[data-uia="player-play-pause"]',
+            '[data-uia="player-fullscreen-enter"]',
+            '[data-uia="player-fullscreen-exit"]',
+            '[data-uia="search-box-input"]',
+            '.watch-video--player-view button'
         ],
         overlaySelectors: [
             '.previewModal--container',

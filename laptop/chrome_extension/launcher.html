@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>GestureControl TV</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0b0d12;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        main {
+            width: min(1100px, 90vw);
+            margin: 0 auto;
+            padding: 8vh 0;
+        }
+
+        .brand {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #87e5a4;
+        }
+
+        h1 {
+            margin: 28px 0 8px;
+            font-size: clamp(30px, 4vw, 54px);
+            font-weight: 600;
+        }
+
+        .subtitle {
+            margin: 0 0 42px;
+            color: #969ba8;
+            font-size: 18px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .tile {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 210px;
+            padding: 32px;
+            border: 3px solid transparent;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            background: #20232e;
+            transition:
+                transform 0.12s ease,
+                border-color 0.12s ease,
+                box-shadow 0.12s ease;
+        }
+
+        .tile:focus-visible,
+        .tile.selected {
+            outline: none;
+            border-color: white;
+            transform: scale(1.035);
+            box-shadow: 0 0 35px #ffffff30;
+        }
+
+        .tile-name {
+            font-size: clamp(26px, 3vw, 40px);
+            font-weight: bold;
+        }
+
+        .tile-description {
+            margin-top: 12px;
+            font-size: 15px;
+            color: #ffffffb0;
+        }
+
+        .tile-youtube {
+            background: #851b23;
+        }
+
+        .tile-netflix {
+            background: #281216;
+        }
+
+        .tile-google {
+            background: #193d72;
+        }
+
+        .tile-games {
+            background: #41306d;
+        }
+
+        footer {
+            margin-top: 40px;
+            color: #7e8491;
+            font-size: 14px;
+        }
+
+        @media (max-width: 650px) {
+            main {
+                padding-top: 5vh;
+            }
+
+            .grid {
+                gap: 12px;
+            }
+
+            .tile {
+                min-height: 150px;
+                padding: 16px;
+            }
+
+            .tile-description {
+                font-size: 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tile {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div class="brand">GESTURECONTROL</div>
+
+        <h1>What would you like to do?</h1>
+        <p class="subtitle">
+            Navigate with your hands.
+        </p>
+
+        <section class="grid"
+                 id="app-grid"
+                 aria-label="Applications">
+        </section>
+
+        <footer>
+            Use arrows to navigate and Enter to select.
+        </footer>
+    </main>
+
+    <script src="apps.js"></script>
+    <script src="launcher.js"></script>
+</body>
+</html>

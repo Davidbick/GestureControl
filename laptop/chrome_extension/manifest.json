@@ -32,7 +32,9 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["content.js",
+      "apps.js",
+      "tv-controls.js"],
       "all_frames": true
     }
   ],

@@ -121,6 +121,25 @@
         footer a {
             color: #555;
         }
+        #open-tv {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 14px;
+            background: #171a20;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #open-tv:hover,
+        #open-tv:focus-visible {
+            background: #303842;
+            outline: 2px solid #4CAF50;
+            outline-offset: 2px;
+        }   
     </style>
 </head>
 <body>
@@ -129,6 +148,9 @@
     <div class="subtitle">
         Directional browser navigation
     </div>
+    <button id="open-tv" type="button">
+        Open TV Mode
+    </button>
 
     <div class="site-row">
         <div>
