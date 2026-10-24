@@ -10,6 +10,8 @@
 #include "sensor_stream.h"
 #include "brightness.h"
 #include "emg_inference.h"
+#include "gesture_engine.h"
+#include "myo_ble_client.h"
 
 LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
 
@@ -23,6 +25,7 @@ static const struct gpio_dt_spec led =
 
 static struct orientation_gate orientation;
 static struct brightness_estimator brightness;
+static struct gesture_engine gesture_control;
 
 #define BRIGHTNESS_CAL_SAMPLES 40
 #define BRIGHTNESS_CAL_INTERVAL_MS 50
@@ -213,7 +216,13 @@ int main(void)
     }
 
     uint32_t last_brightness_sequence = UINT32_MAX;
+    // Ignore gesture events collected during calibration.
+    sensor_stream_clear_swipes();
 
+    // Start command recognition in the disarmed state.
+    gesture_engine_init(&gesture_control);
+
+    uint32_t last_gesture_sequence = UINT32_MAX;
 
 
     uint8_t last_sent = 0xff;

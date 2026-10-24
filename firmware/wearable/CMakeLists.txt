@@ -11,6 +11,7 @@ target_sources(app PRIVATE
     src/emg.c
     src/emg_model.c
     src/emg_inference.c
+    src/gesture_engine.c
     src/sensor_stream.c
     src/ble.c
     src/brightness.c

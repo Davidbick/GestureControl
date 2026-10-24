@@ -112,8 +112,9 @@ static ssize_t write_state(
 
     atomic_set(&rx_valid, state == MYO_VALID);
     atomic_set(&last_rx_ms, k_uptime_get_32());
-    atomic_set(&led_mode, LED_MODE_LEGACY);
 
+// Do not switch back to legacy LED mode here.
+// Once a gesture controls the LED, its state persists.
     LOG_INF("Received: %s",
             state == MYO_VALID ? "VALID" : "INVALID");
 

@@ -38,6 +38,14 @@ static atomic_t read_errors;
 
 static uint32_t next_sequence;
 static struct swipe_detector swipe_detector;
+// Transfer one-shot swipe events from acquisition
+// thread to main thread without losing short events.
+K_MSGQ_DEFINE(
+    swipe_event_queue,
+    sizeof(struct swipe_notification),
+    8,
+    4
+);
 
 static const struct device *const console_dev =
     DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
@@ -88,6 +96,18 @@ static void acquisition_thread(
             );
 
             if (event != SWIPE_NONE) {
+                struct swipe_notification notification = {
+                    .event = event,
+                    .timestamp_ms = frame.timestamp_ms
+                };
+
+                if (k_msgq_put(
+                        &swipe_event_queue,
+                        &notification,
+                        K_NO_WAIT) != 0) {
+
+                    LOG_WRN("Swipe event queue full");
+                }
                 const char *name = "UNKNOWN";
 
                 switch (event) {
@@ -251,3 +271,23 @@ int sensor_stream_latest(struct sensor_frame *sample)
 
     return 0;
 }
+
+bool sensor_stream_pop_swipe(
+    struct swipe_notification *notification)
+{
+    if (notification == NULL) {
+        return false;
+    }
+
+    return k_msgq_get(
+        &swipe_event_queue,
+        notification,
+        K_NO_WAIT
+    ) == 0;
+}
+
+void sensor_stream_clear_swipes(void)
+{
+    k_msgq_purge(&swipe_event_queue);
+}
+
