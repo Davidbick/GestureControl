@@ -116,7 +116,7 @@ int main(void)
 
         if (ret == 0) {
 
-            bool valid =
+            valid =
                 orientation_update(
                     &orientation,
                     &accel);
