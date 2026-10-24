@@ -112,6 +112,7 @@ int main(void)
         struct imu_accel_sample accel;
 
         int ret = imu_read_accel(&accel);
+        bool valid = false;
 
         if (ret == 0) {
 
