@@ -10,6 +10,7 @@
 #include "sensor_stream.h"
 #include "brightness.h"
 #include "emg_inference.h"
+#include "swipe.h"
 
 LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
 
@@ -22,6 +23,7 @@ static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 static struct orientation_gate orientation;
+static struct swipe_detector swipe;
 static struct brightness_estimator brightness;
 
 #define BRIGHTNESS_CAL_SAMPLES 40
@@ -157,6 +159,7 @@ int main(void)
         LOG_ERR("BLE initialization failed");
         return 0;
     }
+    swipe_init(&swipe);
     // Start continuous EMG + IMU acquisition.
     sensor_stream_start();
         
@@ -220,11 +223,32 @@ int main(void)
     int64_t last_tx_ms = 0;
     int64_t last_log_ms = 0;
     int last_reported_class = -2;
+    uint32_t last_swipe_sequence = UINT32_MAX;
 
     while (1) {
         struct sensor_frame frame = {0};
 
         int ret = sensor_stream_latest(&frame);
+
+        // Process each new IMU frame only once
+        if (ret == 0 && frame.sequence != last_swipe_sequence) {
+            last_swipe_sequence = frame.sequence;
+
+            enum swipe_event event = swipe_update(
+                &swipe,
+                &frame.motion,
+                frame.timestamp_ms
+            );
+
+            if (event != SWIPE_NONE) {
+                const char *names[] = {
+                    "NONE", "UP", "DOWN", "LEFT", "RIGHT"
+                };
+
+                LOG_INF("SWIPE DETECTED: %s", names[event]);
+            }
+        }
+
         struct imu_accel_sample accel =
             frame.motion.accel;
 

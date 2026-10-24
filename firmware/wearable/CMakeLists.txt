@@ -14,6 +14,7 @@ target_sources(app PRIVATE
     src/sensor_stream.c
     src/ble.c
     src/brightness.c
+    src/swipe.c
     ../common/myo_ble_client.c
 )
 
