@@ -22,8 +22,3 @@ five-input navigation.
 
 The original README is preserved at
 laptop/chrome_extension/UPSTREAM_COUCH_BROWSER_README.md
-
-License clarification pending.
-The upstream README identifies MIT, while package.json
-identifies ISC. No standalone LICENSE file was present
-in the inspected upstream revision.

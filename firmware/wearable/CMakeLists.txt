@@ -9,6 +9,7 @@ target_sources(app PRIVATE
     src/imu.c
     src/orientation.c
     src/emg.c
+    src/sensor_stream.c
     src/ble.c
     ../common/myo_ble_client.c
 )

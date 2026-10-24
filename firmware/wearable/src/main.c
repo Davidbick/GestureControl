@@ -7,6 +7,7 @@
 #include "orientation.h"
 #include "ble.h"
 #include "myo_ble.h"
+#include "sensor_stream.h"
 
 
 LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
@@ -55,9 +56,14 @@ int main(void)
 
     LOG_INF("imu_init() returned %d", imu_status);
 
-    bool emg_ready = (emg_init() == 0);
-    if (!emg_ready) {
+    if (imu_status < 0) {
+        LOG_ERR("IMU initialization failed");
+        return 0;
+    }
+
+    if (emg_init() < 0) {
         LOG_ERR("EMG ADC initialization failed");
+        return 0;
     }
 
     LOG_INF("Hold wearable in control orientation");
@@ -65,6 +71,7 @@ int main(void)
 
     k_msleep(2000);
 
+    int valid_samples = 0;
     int64_t sum_x = 0;
     int64_t sum_y = 0;
     int64_t sum_z = 0;
@@ -78,15 +85,21 @@ int main(void)
             sum_x += sample.x_mg;
             sum_y += sample.y_mg;
             sum_z += sample.z_mg;
+            valid_samples++;
         }
 
         k_msleep(20);
     }
+    
+    if (valid_samples == 0) {
+        LOG_ERR("No valid IMU calibration samples");
+        return 0;
+    }
 
     struct imu_accel_sample reference = {
-        .x_mg = sum_x / CALIBRATION_SAMPLES,
-        .y_mg = sum_y / CALIBRATION_SAMPLES,
-        .z_mg = sum_z / CALIBRATION_SAMPLES
+        .x_mg = sum_x / valid_samples,
+        .y_mg = sum_y / valid_samples,
+        .z_mg = sum_z / valid_samples
     };
 
     orientation_set_reference(
@@ -104,16 +117,20 @@ int main(void)
         LOG_ERR("BLE initialization failed");
         return 0;
     }
+    // Start continuous EMG + IMU acquisition.
+    sensor_stream_start();
 
     uint8_t last_sent = 0xff;
     int64_t last_tx_ms = 0;
     int64_t last_log_ms = 0;
-    int64_t last_emg_log_ms = 0;
 
     while (1) {
-        struct imu_accel_sample accel;
+        struct sensor_frame frame = {0};
 
-        int ret = imu_read_accel(&accel);
+        int ret = sensor_stream_latest(&frame);
+        struct imu_accel_sample accel =
+            frame.motion.accel;
+
         bool valid = false;
 
         if (ret == 0) {
@@ -158,34 +175,7 @@ int main(void)
                 last_sent = state;
                 last_tx_ms = now;
             }
-        }
-
-        
-        // Dual-channel EMG acquisition
-        if (emg_ready) {
-
-            struct emg_sample emg;
-
-            int emg_ret = emg_read(&emg);
-
-            if (k_uptime_get() - last_emg_log_ms >= 100) {
-
-                if (emg_ret == 0) {
-                    LOG_INF(
-                        "EMG0: raw=%d | %ld mV "
-                        "| EMG1: raw=%d | %ld mV",
-                        emg.raw[0],
-                        (long)emg.mv[0],
-                        emg.raw[1],
-                        (long)emg.mv[1]);
-                } else {
-                    LOG_ERR("EMG read failed: %d", emg_ret);
-                }
-
-                last_emg_log_ms = k_uptime_get();
-            }
-        }
-
+        }        
 
         k_msleep(SAMPLE_INTERVAL_MS);
     }
