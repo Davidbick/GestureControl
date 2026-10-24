@@ -3,14 +3,18 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include "emg.h"
-
 #include "imu.h"
 #include "orientation.h"
+#include "ble.h"
+#include "myo_ble.h"
+
 
 LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
 
 #define LED0_NODE DT_ALIAS(led0)
 #define CALIBRATION_SAMPLES 100
+#define SAMPLE_INTERVAL_MS 50
+#define BLE_HEARTBEAT_MS 500
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED0_NODE, gpios);
@@ -92,6 +96,17 @@ int main(void)
             reference.x_mg,
             reference.y_mg,
             reference.z_mg);
+    
+    
+    // Start BLE after sensor calibration
+    if (ble_init() < 0) {
+        LOG_ERR("BLE initialization failed");
+        return 0;
+    }
+
+    uint8_t last_sent = 0xff;
+    int64_t last_tx_ms = 0;
+    int64_t last_log_ms = 0;
 
     while (1) {
         struct imu_accel_sample accel;
@@ -110,17 +125,40 @@ int main(void)
                     &orientation,
                     &accel);
 
-            LOG_INF(
-                "Angle=%d deg | Orientation=%s | x=%d y=%d z=%d",
-                angle,
-                valid ? "VALID" : "INVALID",
-                accel.x_mg,
-                accel.y_mg,
-                accel.z_mg);
+            if (k_uptime_get() - last_log_ms >= 1000) {
+                LOG_INF(
+                    "Angle=%d deg | Orientation=%s | x=%d y=%d z=%d",
+                    angle,
+                    valid ? "VALID" : "INVALID",
+                    accel.x_mg,
+                    accel.y_mg,
+                    accel.z_mg);
+
+                last_log_ms = k_uptime_get();
+            }
         } else {
             LOG_ERR("Accelerometer read failed: %d", ret);
+
+            // Reset gate after a failed reading
+            orientation.valid = false;
+            orientation.candidate_since_ms = -1;
         }
         
+        uint8_t state = valid ? MYO_VALID : MYO_INVALID;
+
+        int64_t now = k_uptime_get();
+
+        if (state != last_sent ||
+            now - last_tx_ms >= BLE_HEARTBEAT_MS) {
+
+            if (ble_send_state(state) == 0) {
+                last_sent = state;
+                last_tx_ms = now;
+            }
+        }
+
+        /*
+        // EMG logging disabled for Phase 1
         struct emg_sample emg;
 
         if (emg_read(&emg) == 0) {
@@ -128,8 +166,9 @@ int main(void)
                     emg.raw,
                     emg.mv);
         }
+        */
 
-        k_msleep(1000);
+        k_msleep(SAMPLE_INTERVAL_MS);
     }
 
     return 0;

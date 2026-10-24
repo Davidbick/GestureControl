@@ -9,4 +9,10 @@ target_sources(app PRIVATE
     src/imu.c
     src/orientation.c
     src/emg.c
+    src/ble.c
 )
+
+target_include_directories(app PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common
+)
+
