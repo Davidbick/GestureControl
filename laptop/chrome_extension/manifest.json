@@ -13,7 +13,8 @@
     "256": "icons/icon256.png",
     "512": "icons/icon512.png"
   },
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "GestureControl TV Navigation",
@@ -32,6 +33,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "css": ["tv-controls.css"],
       "js": ["content.js",
       "apps.js",
       "tv-controls.js"],

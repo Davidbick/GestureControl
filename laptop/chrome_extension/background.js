@@ -13,9 +13,69 @@ importScripts('apps.js');
 const INPUT_COOLDOWN_MS = 200;
 let lastInputTime = 0;
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg) return;
     
+    // Inject the navigation engine through Chrome
+    // rather than through webpage script elements.
+    if (msg.type === 'MYO_INJECT') {
+        if (!sender.tab ||
+            typeof sender.tab.id !== 'number' ||
+            typeof sender.frameId !== 'number') {
+            sendResponse({
+                ok: false,
+                error: 'Missing target tab or frame'
+            });
+            return;
+        }
+
+        let domain = '';
+
+        try {
+            domain = new URL(sender.url)
+                .hostname.replace(/^www\./, '');
+        } catch (e) {
+            sendResponse({
+                ok: false,
+                error: 'Invalid page URL'
+            });
+            return;
+        }
+
+        const sites = {
+            'youtube.com': 'sites/youtube.com.js',
+            'google.com': 'sites/google.com.js',
+            'netflix.com': 'sites/netflix.com.js'
+        };
+
+        const files = [
+            'virtual-keyboard.js',
+            'core.js',
+            'hid-input.js',
+            sites[domain] || 'sites/default.js'
+        ];
+
+        chrome.scripting.executeScript({
+            target: {
+                tabId: sender.tab.id,
+                frameIds: [sender.frameId]
+            },
+            files: files,
+            world: 'MAIN'
+        }).then(() => {
+            sendResponse({ ok: true });
+        }).catch((error) => {
+            console.error('GestureControl injection failed', error);
+            sendResponse({
+                ok: false,
+                error: error.message
+            });
+        });
+
+        // Keep the message channel open until injection finishes.
+        return true;
+    }
+
     // GestureControl TV navigation.
     // Only respond to messages from a webpage
     // containing our extension's content script.

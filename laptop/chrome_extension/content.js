@@ -1,74 +1,55 @@
 (function() {
     console.log('Couch Browser: Content script loaded in ' + (window.self === window.top ? 'top frame' : 'iframe'));
 
-    function injectScript(path) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = chrome.runtime.getURL(path);
-            // Dynamically-created scripts default to async; force ordered execution
-            // so core.js defines registerSite before the site config runs.
-            script.async = false;
-            script.onload = resolve;
-            script.onerror = reject;
-            (document.head || document.documentElement).appendChild(script);
-        });
-    }
-
     // Dynamically load site-specific logic (also Main World).
     const domain = window.location.hostname.replace(/^www\./, '');
 
+    
     async function init() {
-        // Load the virtual keyboard before the navigation
-        // engine so text fields can use it immediately.
-        await injectScript('virtual-keyboard.js');        
-
         const key = `disabled_${domain}`;
         let result = {};
+
         try {
-            result = await chrome.storage.sync.get([key, 'defaultMode', 'cursorSpeed', 'scrollSpeed', 'cursorIdleTimeout']);
-        } catch (e) {
-            console.error('Couch Browser: Failed to read storage', e);
+            result = await chrome.storage.sync.get([
+                key,
+                'cursorSpeed',
+                'scrollSpeed',
+                'cursorIdleTimeout'
+            ]);
+        } catch (error) {
+            console.error(
+                'GestureControl: Failed to read settings', error
+            );
         }
 
-        if (result && result[key]) {
-            console.log(`Couch Browser: Extension selection is disabled for ${domain}`);
+        if (result[key]) {
+            console.log(
+                `GestureControl: Disabled for ${domain}`
+            );
             return;
         }
 
-        console.log(`Couch Browser: Extension selection is enabled for ${domain}`);
-
-        // Central navigation engine (Main World). Must load before any site config.
-        await injectScript('core.js');
-        await injectScript('hid-input.js');
-
-        postSettings(result);
-
-        loadSiteLogic();
-    }
-
-    async function checkFileExists(url) {
         try {
-            const response = await fetch(url, { method: 'HEAD' });
-            return response.ok;
-        } catch (e) {
-            return false;
-        }
-    }
+            const response = await chrome.runtime.sendMessage({
+                type: 'MYO_INJECT'
+            });
 
-    async function loadSiteLogic() {
-        const scriptPath = `sites/${domain}.js`;
-        let pathToLoad = 'sites/default.js';
-        const fullScriptPath = chrome.runtime.getURL(scriptPath);
-        if (await checkFileExists(fullScriptPath)) {
-            pathToLoad = scriptPath;
-        }
+            if (!response || !response.ok) {
+                throw new Error(
+                    response?.error || 'Script injection failed'
+                );
+            }
 
-        console.log(`Couch Browser: Loading site logic from ${pathToLoad}`);
+            postSettings(result);
 
-        try {
-            injectScript(pathToLoad);
-        } catch (e) {
-            console.error('Couch Browser: Failed to load site logic', e);
+            console.log(
+                'GestureControl: Navigation engine ready'
+            );
+        } catch (error) {
+            console.error(
+                'GestureControl: Failed to load navigation',
+                error
+            );
         }
     }
 

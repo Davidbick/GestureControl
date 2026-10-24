@@ -21,80 +21,6 @@
         });
     }
 
-    const style = document.createElement('style');
-
-    style.textContent = `
-        #myo-tv-open {
-            position: fixed !important;
-            left: 18px !important;
-            bottom: 18px !important;
-            z-index: 2147483500 !important;
-            padding: 10px 18px !important;
-            background: #171a20 !important;
-            color: #fff !important;
-            border: 2px solid #87e5a4 !important;
-            border-radius: 24px !important;
-            font: bold 13px Arial, sans-serif !important;
-            cursor: pointer !important;
-        }
-
-        #myo-tv-panel {
-            position: fixed !important;
-            inset: 0 !important;
-            z-index: 2147483500 !important;
-            display: none;
-            align-items: center !important;
-            justify-content: center !important;
-            background: #000b !important;
-            font-family: Arial, sans-serif !important;
-        }
-
-        #myo-tv-panel .myo-menu {
-            width: min(900px, 90vw) !important;
-            max-height: 90vh !important;
-            overflow-y: auto !important;
-            padding: 32px !important;
-            border-radius: 22px !important;
-            background: #171a20 !important;
-            color: #fff !important;
-            box-sizing: border-box !important;
-        }
-
-        #myo-tv-panel h2 {
-            color: white !important;
-            font: bold 28px Arial, sans-serif !important;
-            margin: 0 0 24px !important;
-        }
-
-        #myo-tv-panel .myo-actions,
-        #myo-tv-panel .myo-apps {
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 12px !important;
-            margin-bottom: 18px !important;
-        }
-
-        #myo-tv-panel button {
-            min-height: 70px !important;
-            padding: 16px !important;
-            background: #30343e !important;
-            border: 3px solid transparent !important;
-            border-radius: 12px !important;
-            color: white !important;
-            font: bold 17px Arial, sans-serif !important;
-            cursor: pointer !important;
-        }
-
-        #myo-tv-panel button:hover,
-        #myo-tv-panel button:focus-visible {
-            outline: none !important;
-            border-color: white !important;
-            background: #414855 !important;
-        }
-    `;
-
-    document.documentElement.appendChild(style);
-
     const openButton = document.createElement('button');
     openButton.id = 'myo-tv-open';
     openButton.type = 'button';
@@ -155,8 +81,9 @@
         appGrid.appendChild(button);
     });
 
+    
     function showMenu() {
-        panel.style.display = 'flex';
+        panel.classList.add('myo-open');
 
         panel.querySelector(
             '[data-myo-action="home"]'
@@ -164,9 +91,10 @@
     }
 
     function hideMenu() {
-        panel.style.display = 'none';
+        panel.classList.remove('myo-open');
         openButton.focus();
     }
+
 
     function navigate(type, appId = null) {
         chrome.runtime.sendMessage({
