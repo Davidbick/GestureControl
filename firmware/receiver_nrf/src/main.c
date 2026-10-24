@@ -3,12 +3,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 
+#include <string.h>
 #include "myo_ble.h"
 
 LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
@@ -110,6 +110,7 @@ static ssize_t write_state(
 
     atomic_set(&rx_valid, state == MYO_VALID);
     atomic_set(&last_rx_ms, k_uptime_get_32());
+    atomic_set(&led_mode, LED_MODE_LEGACY);
 
     LOG_INF("Received: %s",
             state == MYO_VALID ? "VALID" : "INVALID");
@@ -233,6 +234,9 @@ static void connected(
         return;
     }
 
+    k_msgq_purge(&gesture_queue);
+
+    atomic_inc(&session_epoch);
     atomic_set(&link_up, 1);
     atomic_set(&rx_valid, 0);
 
