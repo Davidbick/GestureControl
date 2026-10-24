@@ -304,6 +304,7 @@ static void process_gesture(
     // A classified gesture now owns the actuator.
     atomic_set(&led_mode, LED_MODE_GESTURE);
 
+    int hid_err = 0;
     switch (gesture) {
 
     case MYO_GESTURE_TENSE:
@@ -325,18 +326,41 @@ static void process_gesture(
 
         LOG_INF("LIGHT: %s",
                 gesture_led_on ? "ON" : "OFF");
+        
+        // Also double-click on the laptop.
+        hid_err = myo_usb_hid_enqueue(
+            MYO_HID_DOUBLE_CLICK);
+
         break;
 
-    case MYO_GESTURE_SWIPE_UP:
+   case MYO_GESTURE_SWIPE_UP:
+        hid_err = myo_usb_hid_enqueue(
+            MYO_HID_SCROLL_UP);
+        break;
+
     case MYO_GESTURE_SWIPE_DOWN:
+        hid_err = myo_usb_hid_enqueue(
+            MYO_HID_SCROLL_DOWN);
+        break;
+
     case MYO_GESTURE_SWIPE_LEFT:
+        hid_err = myo_usb_hid_enqueue(
+            MYO_HID_PREVIOUS_TAB);
+        break;
+
     case MYO_GESTURE_SWIPE_RIGHT:
-        // Recognized, but no physical LED action.
-        // USB HID mappings will be added here.
+        hid_err = myo_usb_hid_enqueue(
+            MYO_HID_NEXT_TAB);
         break;
 
     default:
         break;
+    }
+    
+    if (hid_err == -ENOTCONN) {
+        LOG_DBG("USB not connected, HID skipped");
+    } else if (hid_err) {
+        LOG_WRN("HID enqueue failed: %d", hid_err);
     }
 }
 

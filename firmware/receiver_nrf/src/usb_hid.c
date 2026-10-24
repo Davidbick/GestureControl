@@ -135,6 +135,13 @@ USBD_CONFIGURATION_DEFINE(
 static atomic_t hid_ready;
 static uint32_t idle_ms[4];
 
+K_MSGQ_DEFINE(
+    hid_action_queue,
+    sizeof(enum myo_hid_action),
+    12,
+    4
+);
+
 static void hid_iface_ready(
     const struct device *dev,
     bool ready)
@@ -142,6 +149,10 @@ static void hid_iface_ready(
     ARG_UNUSED(dev);
 
     atomic_set(&hid_ready, ready ? 1 : 0);
+
+    if (!ready) {
+        k_msgq_purge(&hid_action_queue);
+    }
 
     LOG_INF("USB HID %s",
             ready ? "ready" : "not ready");
@@ -233,7 +244,7 @@ static void usb_msg_cb(
 
     if (msg->type == USBD_MSG_VBUS_REMOVED) {
         atomic_set(&hid_ready, 0);
-
+        k_msgq_purge(&hid_action_queue);
         int err = usbd_disable(ctx);
 
         if (err) {
@@ -245,6 +256,277 @@ static void usb_msg_cb(
 bool usb_hid_ready(void)
 {
     return atomic_get(&hid_ready) != 0;
+}
+
+
+/*
+ * Stage 2: Laptop HID actions
+ *
+ * All reports are submitted from one worker thread.
+ * This keeps the BLE and LED dispatcher responsive.
+ */
+
+#define HID_MOD_CTRL  0x01
+#define HID_MOD_SHIFT 0x02
+#define HID_KEY_TAB   0x2B
+
+#define HID_MOUSE_LEFT 0x01
+
+#define HID_USAGE_VOLUME_UP   0x00E9
+#define HID_USAGE_VOLUME_DOWN 0x00EA
+
+/* Submit one HID input report. */
+static int send_report(
+    const uint8_t *report,
+    uint16_t length)
+{
+    if (!usb_hid_ready()) {
+        return -ENOTCONN;
+    }
+
+    const struct device *dev =
+        DEVICE_DT_GET_ONE(zephyr_hid_device);
+
+    return hid_device_submit_report(
+        dev, length, report);
+}
+
+/*
+ * Keyboard shortcut
+ *
+ * Send key press, then release all keys.
+ * This prevents stuck Ctrl/Shift keys.
+ */
+static int keyboard_shortcut(
+    uint8_t modifiers,
+    uint8_t key)
+{
+    UDC_STATIC_BUF_DEFINE(report, 9);
+
+    memset(report, 0, sizeof(report));
+
+    report[0] = HID_ID_KEYBOARD;
+    report[1] = modifiers;
+    report[3] = key;
+
+    int err = send_report(report, sizeof(report));
+
+    if (err) {
+        return err;
+    }
+
+    k_msleep(35);
+
+    /* Release every key and modifier. */
+    memset(report, 0, sizeof(report));
+    report[0] = HID_ID_KEYBOARD;
+
+    return send_report(report, sizeof(report));
+}
+
+/*
+ * Mouse report
+ *
+ * Byte 0: Report ID
+ * Byte 1: Buttons
+ * Byte 2: X movement
+ * Byte 3: Y movement
+ * Byte 4: Wheel movement
+ */
+static int mouse_report(
+    uint8_t buttons,
+    int8_t wheel)
+{
+    UDC_STATIC_BUF_DEFINE(report, 5);
+
+    memset(report, 0, sizeof(report));
+
+    report[0] = HID_ID_MOUSE;
+    report[1] = buttons;
+    report[4] = (uint8_t)wheel;
+
+    return send_report(report, sizeof(report));
+}
+
+/* One discrete scroll step. */
+static int mouse_scroll(int8_t direction)
+{
+    int err = mouse_report(0, direction);
+
+    if (err) {
+        return err;
+    }
+
+    k_msleep(20);
+
+    /* Neutral report after relative movement. */
+    return mouse_report(0, 0);
+}
+
+/* Two left clicks within the double-click window. */
+static int mouse_double_click(void)
+{
+    for (int i = 0; i < 2; i++) {
+
+        /* Press left mouse button. */
+        int err = mouse_report(HID_MOUSE_LEFT, 0);
+
+        if (err) {
+            return err;
+        }
+
+        k_msleep(35);
+
+        /* Release mouse button. */
+        err = mouse_report(0, 0);
+
+        if (err) {
+            return err;
+        }
+
+        if (i == 0) {
+            k_msleep(90);
+        }
+    }
+
+    return 0;
+}
+
+/*
+ * Consumer Control report
+ *
+ * Media usages are 16-bit values.
+ * Example: Volume Up = 0x00E9.
+ */
+static int media_key(uint16_t usage)
+{
+    UDC_STATIC_BUF_DEFINE(report, 3);
+
+    report[0] = HID_ID_MEDIA;
+    report[1] = (uint8_t)(usage & 0xFF);
+    report[2] = (uint8_t)(usage >> 8);
+
+    int err = send_report(report, sizeof(report));
+
+    if (err) {
+        return err;
+    }
+
+    k_msleep(35);
+
+    /* Release media key. */
+    report[1] = 0;
+    report[2] = 0;
+
+    return send_report(report, sizeof(report));
+}
+
+/*
+ * Execute one queued laptop action.
+ *
+ * This runs outside the BLE callback and
+ * outside the receiver's main actuation loop.
+ */
+static int execute_hid_action(
+    enum myo_hid_action action)
+{
+    switch (action) {
+
+    case MYO_HID_SCROLL_UP:
+        return mouse_scroll(1);
+
+    case MYO_HID_SCROLL_DOWN:
+        return mouse_scroll(-1);
+
+    case MYO_HID_PREVIOUS_TAB:
+        return keyboard_shortcut(
+            HID_MOD_CTRL | HID_MOD_SHIFT,
+            HID_KEY_TAB);
+
+    case MYO_HID_NEXT_TAB:
+        return keyboard_shortcut(
+            HID_MOD_CTRL,
+            HID_KEY_TAB);
+
+    case MYO_HID_DOUBLE_CLICK:
+        return mouse_double_click();
+
+    case MYO_HID_VOLUME_UP:
+        return media_key(HID_USAGE_VOLUME_UP);
+
+    case MYO_HID_VOLUME_DOWN:
+        return media_key(HID_USAGE_VOLUME_DOWN);
+
+    default:
+        return -EINVAL;
+    }
+}
+
+/*
+ * Dedicated HID worker.
+ *
+ * Actions run sequentially so reports from
+ * different gestures cannot interleave.
+ */
+static void hid_worker(
+    void *arg1,
+    void *arg2,
+    void *arg3)
+{
+    ARG_UNUSED(arg1);
+    ARG_UNUSED(arg2);
+    ARG_UNUSED(arg3);
+
+    while (1) {
+        enum myo_hid_action action;
+
+        k_msgq_get(
+            &hid_action_queue,
+            &action,
+            K_FOREVER);
+
+        if (!usb_hid_ready()) {
+            continue;
+        }
+
+        int err = execute_hid_action(action);
+
+        if (err && err != -ENOTCONN) {
+            LOG_WRN("HID action %d failed: %d",
+                    action, err);
+        }
+    }
+}
+
+/* Independent thread for HID actions. */
+K_THREAD_DEFINE(
+    hid_worker_id,
+    1536,
+    hid_worker,
+    NULL, NULL, NULL,
+    7,
+    0,
+    0
+);
+
+/* Public entry point for the BLE dispatcher.
+ *
+ * Returns immediately after queueing the action.*/
+int myo_usb_hid_enqueue(enum myo_hid_action action)
+{
+    if (action < MYO_HID_SCROLL_UP ||
+        action > MYO_HID_VOLUME_DOWN) {
+        return -EINVAL;
+    }
+
+    if (!usb_hid_ready()) {
+        return -ENOTCONN;
+    }
+
+    return k_msgq_put(
+        &hid_action_queue,
+        &action,
+        K_NO_WAIT);
 }
 
 int myo_usb_hid_init(void)
