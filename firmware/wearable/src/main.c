@@ -8,6 +8,7 @@
 #include "ble.h"
 #include "myo_ble.h"
 #include "sensor_stream.h"
+#include "brightness.h"
 
 
 LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
@@ -21,6 +22,10 @@ static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 static struct orientation_gate orientation;
+static struct brightness_estimator brightness;
+
+#define BRIGHTNESS_CAL_SAMPLES 40
+#define BRIGHTNESS_CAL_INTERVAL_MS 50
 
 static void blink_work_handler(struct k_work *work);
 
@@ -37,6 +42,41 @@ static void blink_work_handler(struct k_work *work)
 
     k_work_reschedule(&blink_work, K_MSEC(500));
 }
+
+
+static int capture_emg0_average_mv(int32_t *average_mv)
+{
+    int64_t sum = 0;
+    int count = 0;
+
+    uint32_t last_sequence = UINT32_MAX;
+    int64_t deadline = k_uptime_get() + 5000;
+
+    while (count < BRIGHTNESS_CAL_SAMPLES &&
+           k_uptime_get() < deadline) {
+
+        struct sensor_frame frame;
+
+        if (sensor_stream_latest(&frame) == 0 &&
+            frame.sequence != last_sequence) {
+
+            last_sequence = frame.sequence;
+            sum += frame.emg.mv[0];
+            count++;
+        }
+
+        k_msleep(BRIGHTNESS_CAL_INTERVAL_MS);
+    }
+
+    if (count != BRIGHTNESS_CAL_SAMPLES) {
+        LOG_ERR("EMG calibration failed: %d samples", count);
+        return -1;
+    }
+
+    *average_mv = (int32_t)(sum / count);
+    return 0;
+}
+
 
 int main(void)
 {
@@ -119,6 +159,62 @@ int main(void)
     }
     // Start continuous EMG + IMU acquisition.
     sensor_stream_start();
+        
+    // Brightness calibration uses EMG0.
+    // Keep the arm in its calibrated control orientation.
+
+    int32_t rest_mv = 0;
+    int32_t extended_mv = 0;
+    bool brightness_ready = false;
+
+    LOG_INF("BRIGHTNESS CALIBRATION");
+    LOG_INF("Relax your forearm. Starting in 2 seconds.");
+
+    k_msleep(2000);
+
+    int rest_status = capture_emg0_average_mv(&rest_mv);
+
+    if (rest_status == 0) {
+        LOG_INF("Rest baseline: %d mV", rest_mv);
+    }
+
+    LOG_INF("Extend your wrist comfortably.");
+    LOG_INF("Hold steady. Starting in 2 seconds.");
+
+    k_msleep(2000);
+
+    int extend_status =
+        capture_emg0_average_mv(&extended_mv);
+
+    if (extend_status == 0) {
+        LOG_INF("Extension level: %d mV", extended_mv);
+    }
+
+    if (rest_status == 0 &&
+        extend_status == 0 &&
+        extended_mv > rest_mv + 3) {
+
+        brightness_init(
+            &brightness,
+            (float)rest_mv,
+            (float)extended_mv
+        );
+
+        brightness_ready = true;
+
+        LOG_INF("Brightness calibration complete");
+        LOG_INF("Range: %d to %d mV",
+                rest_mv, extended_mv);
+
+    } else {
+        LOG_WRN("Brightness calibration invalid");
+        LOG_WRN("Brightness disabled until reboot");
+        // Existing BLE behavior still continues.
+    }
+
+    uint32_t last_brightness_sequence = UINT32_MAX;
+
+
 
     uint8_t last_sent = 0xff;
     int64_t last_tx_ms = 0;
@@ -139,6 +235,21 @@ int main(void)
                 orientation_update(
                     &orientation,
                     &accel);
+                        
+            // Update brightness only when a fresh sensor
+            // frame is available and calibration succeeded.
+            if (brightness_ready &&
+                frame.sequence != last_brightness_sequence) {
+
+                brightness_update(
+                    &brightness,
+                    frame.emg.mv[0],
+                    frame.timestamp_ms,
+                    valid
+                );
+
+                last_brightness_sequence = frame.sequence;
+            }
 
             int angle =
                 orientation_angle_deg(
@@ -146,13 +257,15 @@ int main(void)
                     &accel);
 
             if (k_uptime_get() - last_log_ms >= 1000) {
+                
                 LOG_INF(
-                    "Angle=%d deg | Orientation=%s | x=%d y=%d z=%d",
-                    angle,
+                    "EMG0=%d mV | Brightness=%u%% | Orientation=%s | Angle=%d",
+                    frame.emg.mv[0],
+                    brightness_get(&brightness),
                     valid ? "VALID" : "INVALID",
-                    accel.x_mg,
-                    accel.y_mg,
-                    accel.z_mg);
+                    angle
+                );
+
 
                 last_log_ms = k_uptime_get();
             }
@@ -162,6 +275,14 @@ int main(void)
             // Reset gate after a failed reading
             orientation.valid = false;
             orientation.candidate_since_ms = -1;
+            if (brightness_ready) {
+                brightness_update(
+                    &brightness,
+                    0,
+                    k_uptime_get_32(),
+                    false
+                );
+            }
         }
         
         uint8_t state = valid ? MYO_VALID : MYO_INVALID;
