@@ -2,6 +2,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include "emg.h"
 
 #include "imu.h"
 #include "orientation.h"
@@ -49,6 +50,10 @@ int main(void)
     int imu_status = imu_init();
 
     LOG_INF("imu_init() returned %d", imu_status);
+
+    if (emg_init() < 0) {
+        LOG_ERR("EMG ADC initialization failed");
+    }
 
     LOG_INF("Hold wearable in control orientation");
     LOG_INF("Calibrating in 2 seconds...");
@@ -116,6 +121,14 @@ int main(void)
             LOG_ERR("Accelerometer read failed: %d", ret);
         }
         
+        struct emg_sample emg;
+
+        if (emg_read(&emg) == 0) {
+            LOG_INF("EMG: raw=%d | %d mV",
+                    emg.raw,
+                    emg.mv);
+        }
+
         k_msleep(1000);
     }
 

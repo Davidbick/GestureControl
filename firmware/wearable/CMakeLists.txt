@@ -8,4 +8,5 @@ target_sources(app PRIVATE
     src/main.c
     src/imu.c
     src/orientation.c
+    src/emg.c
 )
