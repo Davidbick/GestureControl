@@ -68,14 +68,13 @@
                 key.textContent = 'Backspace';
             } else if (d.special === 'Enter') {
                 key.textContent = 'Search';
-            }
             } else if (d.special === 'Shift') {
                 key.append('Shift ');
                 key.append(createButtonBadge('LT', 'lt'));
             } else {
                 key.textContent = d.special ? d.label : (shifted ? d[1] : d[0]);
             }
-            key.setAttribute('aria-label', d.special || (shifted ? d[1] : d[0]));
+            key.setAttribute('aria-label', 'Use arrow keys to select Close');
             key.style.background = keyElements[selected] === key ? '#4CAF50' : '#303038';
             key.style.color = keyElements[selected] === key ? '#111' : '#fff';
         });
