@@ -10,6 +10,7 @@ target_sources(app PRIVATE
     src/orientation.c
     src/emg.c
     src/ble.c
+    ../common/myo_ble_client.c
 )
 
 target_include_directories(app PRIVATE

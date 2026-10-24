@@ -59,6 +59,42 @@ static ssize_t write_state(
     return len;
 }
 
+// Receives classified gesture events.
+static ssize_t write_gesture(
+    struct bt_conn *conn,
+    const struct bt_gatt_attr *attr,
+    const void *buf,
+    uint16_t len,
+    uint16_t offset,
+    uint8_t flags)
+{
+    ARG_UNUSED(conn);
+    ARG_UNUSED(attr);
+
+    if (offset != 0 ||
+        len != sizeof(struct myo_gesture_packet)) {
+        return BT_GATT_ERR(
+            BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+    }
+
+    if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+        return 0;
+    }
+
+    const struct myo_gesture_packet *packet = buf;
+
+    if (!myo_gesture_valid(packet->gesture)) {
+        LOG_WRN("Invalid gesture: %u", packet->gesture);
+        return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+    }
+
+    LOG_INF("Gesture received: id=%u seq=%u",
+            packet->gesture,
+            packet->sequence);
+
+    return len;
+}
+
 // Custom GestureControl GATT service
 BT_GATT_SERVICE_DEFINE(myo_service,
     BT_GATT_PRIMARY_SERVICE(
@@ -71,6 +107,15 @@ BT_GATT_SERVICE_DEFINE(myo_service,
         BT_GATT_PERM_WRITE,
         NULL,
         write_state,
+        NULL)
+    
+     BT_GATT_CHARACTERISTIC(
+        BT_UUID_DECLARE_128(MYO_GESTURE_UUID_BYTES),
+        BT_GATT_CHRC_WRITE |
+        BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+        BT_GATT_PERM_WRITE,
+        NULL,
+        write_gesture,
         NULL)
 );
 
