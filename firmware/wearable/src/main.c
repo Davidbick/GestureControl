@@ -55,7 +55,8 @@ int main(void)
 
     LOG_INF("imu_init() returned %d", imu_status);
 
-    if (emg_init() < 0) {
+    bool emg_ready = (emg_init() == 0);
+    if (!emg_ready) {
         LOG_ERR("EMG ADC initialization failed");
     }
 
@@ -107,6 +108,7 @@ int main(void)
     uint8_t last_sent = 0xff;
     int64_t last_tx_ms = 0;
     int64_t last_log_ms = 0;
+    int64_t last_emg_log_ms = 0;
 
     while (1) {
         struct imu_accel_sample accel;
@@ -158,16 +160,32 @@ int main(void)
             }
         }
 
-        /*
-        // EMG logging disabled for Phase 1
-        struct emg_sample emg;
+        
+        // Dual-channel EMG acquisition
+        if (emg_ready) {
 
-        if (emg_read(&emg) == 0) {
-            LOG_INF("EMG: raw=%d | %d mV",
-                    emg.raw,
-                    emg.mv);
+            struct emg_sample emg;
+
+            int emg_ret = emg_read(&emg);
+
+            if (k_uptime_get() - last_emg_log_ms >= 100) {
+
+                if (emg_ret == 0) {
+                    LOG_INF(
+                        "EMG0: raw=%d | %ld mV "
+                        "| EMG1: raw=%d | %ld mV",
+                        emg.raw[0],
+                        (long)emg.mv[0],
+                        emg.raw[1],
+                        (long)emg.mv[1]);
+                } else {
+                    LOG_ERR("EMG read failed: %d", emg_ret);
+                }
+
+                last_emg_log_ms = k_uptime_get();
+            }
         }
-        */
+
 
         k_msleep(SAMPLE_INTERVAL_MS);
     }

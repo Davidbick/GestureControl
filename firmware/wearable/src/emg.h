@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
+#define EMG_CHANNEL_COUNT 2
+
 struct emg_sample {
-    int16_t raw;
-    int32_t mv;
+    int16_t raw[EMG_CHANNEL_COUNT];
+    int32_t mv[EMG_CHANNEL_COUNT];
 };
 
 int emg_init(void);
