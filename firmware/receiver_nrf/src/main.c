@@ -107,7 +107,7 @@ BT_GATT_SERVICE_DEFINE(myo_service,
         BT_GATT_PERM_WRITE,
         NULL,
         write_state,
-        NULL)
+        NULL),
     
      BT_GATT_CHARACTERISTIC(
         BT_UUID_DECLARE_128(MYO_GESTURE_UUID_BYTES),
