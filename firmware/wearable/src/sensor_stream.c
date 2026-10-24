@@ -1,5 +1,6 @@
 
 #include "sensor_stream.h"
+#include "emg_inference.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -78,6 +79,14 @@ static void acquisition_thread(
         int imu_ret = imu_read_motion(&frame.motion);
 
         if (emg_ret == 0 && imu_ret == 0) {
+
+            // Feed every valid EMG0 sample to the classifier.
+            // Runs at the acquisition rate of 100 Hz.
+            emg_inference_push(
+                frame.emg.mv[0],
+                frame.sequence,
+                frame.timestamp_ms
+            );
 
             k_mutex_lock(&latest_lock, K_FOREVER);
 

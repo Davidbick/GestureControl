@@ -79,7 +79,7 @@ emg_class_t emg_model_predict(
 
         lines.append(
             f"{prefix}if (features[{feature}] <= "
-            f"{threshold:.9g}f) {{"
+            f"{threshold:.9e}f) {{"
         )
 
         emit(tree.children_left[node], indent + 1)

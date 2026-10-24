@@ -10,6 +10,7 @@ target_sources(app PRIVATE
     src/orientation.c
     src/emg.c
     src/emg_model.c
+    src/emg_inference.c
     src/sensor_stream.c
     src/ble.c
     src/brightness.c

@@ -9,7 +9,7 @@
 #include "myo_ble.h"
 #include "sensor_stream.h"
 #include "brightness.h"
-
+#include "emg_inference.h"
 
 LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
 
@@ -219,6 +219,7 @@ int main(void)
     uint8_t last_sent = 0xff;
     int64_t last_tx_ms = 0;
     int64_t last_log_ms = 0;
+    int last_reported_class = -2;
 
     while (1) {
         struct sensor_frame frame = {0};
@@ -251,23 +252,62 @@ int main(void)
                 last_brightness_sequence = frame.sequence;
             }
 
+            
             int angle =
                 orientation_angle_deg(
                     &orientation,
                     &accel);
 
-            if (k_uptime_get() - last_log_ms >= 1000) {
-                
+            // Retrieve the most recent ML prediction.
+            emg_class_t predicted_class;
+            bool prediction_ready =
+                emg_inference_latest(&predicted_class);
+
+            const char *gesture = "WARMUP";
+            int class_code = -1;
+
+            if (prediction_ready) {
+                class_code = (int)predicted_class;
+
+                switch (predicted_class) {
+                case EMG_REST:
+                    gesture = "REST";
+                    break;
+
+                case EMG_FLEX:
+                    gesture = "FLEX";
+                    break;
+
+                case EMG_EXTEND:
+                    gesture = "EXTEND";
+                    break;
+
+                default:
+                    gesture = "UNKNOWN";
+                    break;
+                }
+            }
+
+            int64_t log_now = k_uptime_get();
+
+            // Log periodically and when the classification changes.
+            // Throttle changes to avoid flooding the console.
+            if ((log_now - last_log_ms >= 250) ||
+                (class_code != last_reported_class &&
+                log_now - last_log_ms >= 100)) {
+
                 LOG_INF(
-                    "EMG0=%d mV | Brightness=%u%% | Orientation=%s | Angle=%d",
+                    "EMG0=%d mV | Gesture=%s | "
+                    "Brightness=%u%% | Orientation=%s | Angle=%d",
                     frame.emg.mv[0],
+                    gesture,
                     brightness_get(&brightness),
                     valid ? "VALID" : "INVALID",
                     angle
                 );
 
-
-                last_log_ms = k_uptime_get();
+                last_reported_class = class_code;
+                last_log_ms = log_now;
             }
         } else {
             LOG_ERR("Accelerometer read failed: %d", ret);
