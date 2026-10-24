@@ -1,6 +1,7 @@
 
 #include "sensor_stream.h"
 #include "emg_inference.h"
+#include "swipe.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -36,6 +37,7 @@ static atomic_t dropped_samples;
 static atomic_t read_errors;
 
 static uint32_t next_sequence;
+static struct swipe_detector swipe_detector;
 
 static const struct device *const console_dev =
     DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
@@ -79,7 +81,34 @@ static void acquisition_thread(
         int imu_ret = imu_read_motion(&frame.motion);
 
         if (emg_ret == 0 && imu_ret == 0) {
+            enum swipe_event event = swipe_update(
+                &swipe_detector,
+                &frame.motion,
+                frame.timestamp_ms
+            );
 
+            if (event != SWIPE_NONE) {
+                const char *name = "UNKNOWN";
+
+                switch (event) {
+                case SWIPE_UP:
+                    name = "UP";
+                    break;
+                case SWIPE_DOWN:
+                    name = "DOWN";
+                    break;
+                case SWIPE_LEFT:
+                    name = "LEFT";
+                    break;
+                case SWIPE_RIGHT:
+                    name = "RIGHT";
+                    break;
+                default:
+                    break;
+                }
+
+                LOG_INF("SWIPE DETECTED: %s", name);
+            }
             // Feed every valid EMG0 sample to the classifier.
             // Runs at the acquisition rate of 100 Hz.
             emg_inference_push(
@@ -194,6 +223,8 @@ K_THREAD_DEFINE(
 
 void sensor_stream_start(void)
 {
+    swipe_init(&swipe_detector);
+
     atomic_set(&dropped_samples, 0);
     atomic_set(&read_errors, 0);
 
