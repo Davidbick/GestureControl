@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 
-int usb_hid_init(void);
+int myo_usb_hid_init(void);
 
 bool usb_hid_ready(void);
 

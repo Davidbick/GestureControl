@@ -392,12 +392,12 @@ int main(void)
     LOG_INF("GestureControl receiver starting");
     atomic_set(&led_mode, LED_MODE_LEGACY);
 
-    int err = usb_hid_init();
+    int err = myo_usb_hid_init();
 
     if (err) {
         LOG_ERR("USB HID init failed: %d", err);
     }
-    
+
     err = bt_enable(NULL);
 
     if (err) {

@@ -247,7 +247,7 @@ bool usb_hid_ready(void)
     return atomic_get(&hid_ready) != 0;
 }
 
-int usb_hid_init(void)
+int myo_usb_hid_init(void)
 {
     int err;
 
