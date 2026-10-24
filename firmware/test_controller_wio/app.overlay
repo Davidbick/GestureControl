@@ -1,0 +1,3 @@
+&{/trackball} {
+    debounce-interval-ms = <10>;
+};
