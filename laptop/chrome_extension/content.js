@@ -18,10 +18,8 @@
     const domain = window.location.hostname.replace(/^www\./, '');
 
     async function init() {
-        // Gamepad polling must run in the Main World: Chrome does not expose
-        // connected gamepads to content-script isolated worlds.
-        // Wait for gamepad.js to be evaluated before posting settings. Otherwise
-        // a fast storage read can beat the external script load on new pages.
+        // Load the virtual keyboard before the navigation
+        // engine so text fields can use it immediately.
         await injectScript('virtual-keyboard.js');        
 
         const key = `disabled_${domain}`;

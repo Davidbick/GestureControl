@@ -4,10 +4,10 @@
     if (window.CouchBrowserVirtualKeyboard) return;
 
     const rows = [
-        [['1', '!'], ['2', '@'], ['3', '#'], ['4', '$'], ['5', '%'], ['6', '^'], ['7', '&'], ['8', '*'], ['9', '('], ['0', ')'], ['-', '_'], ['=', '+'], { special: 'Backspace', label: '⌫  Y' }],
+        [['1', '!'], ['2', '@'], ['3', '#'], ['4', '$'], ['5', '%'], ['6', '^'], ['7', '&'], ['8', '*'], ['9', '('], ['0', ')'], ['-', '_'], ['=', '+'], { special: 'Backspace', label: 'Backspace' }],
         [['q', 'Q'], ['w', 'W'], ['e', 'E'], ['r', 'R'], ['t', 'T'], ['y', 'Y'], ['u', 'U'], ['i', 'I'], ['o', 'O'], ['p', 'P'], ['[', '{'], [']', '}'], ['\\', '|']],
-        [['a', 'A'], ['s', 'S'], ['d', 'D'], ['f', 'F'], ['g', 'G'], ['h', 'H'], ['j', 'J'], ['k', 'K'], ['l', 'L'], [';', ':'], ["'", '"'], { special: 'Enter', label: 'Enter  X' }],
-        [{ special: 'Shift', label: 'Shift  LT' }, ['z', 'Z'], ['x', 'X'], ['c', 'C'], ['v', 'V'], ['b', 'B'], ['n', 'N'], ['m', 'M'], [',', '<'], ['.', '>'], ['/', '?']],
+        [['a', 'A'], ['s', 'S'], ['d', 'D'], ['f', 'F'], ['g', 'G'], ['h', 'H'], ['j', 'J'], ['k', 'K'], ['l', 'L'], [';', ':'], ["'", '"'], { special: 'Enter', label: 'Search' }],
+        [{ special: 'Shift', label: 'Shift' }, ['z', 'Z'], ['x', 'X'], ['c', 'C'], ['v', 'V'], ['b', 'B'], ['n', 'N'], ['m', 'M'], [',', '<'], ['.', '>'], ['/', '?']],
         [{ special: 'Space', label: 'Space' }, { special: 'Close', label: 'Close' }]
     ];
 
@@ -32,7 +32,7 @@
         overlay.setAttribute('aria-label', 'Virtual keyboard');
         overlay.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483646;display:none;width:min(94vw,920px);padding:14px;background:rgba(18,18,22,.97);border:2px solid #4CAF50;border-radius:12px;box-shadow:0 8px 30px #000;box-sizing:border-box;font-family:Arial,sans-serif;user-select:none;';
         const closeHint = document.createElement('div');
-        closeHint.setAttribute('aria-label', 'Press B to close the virtual keyboard');
+        closeHint.setAttribute('aria-label', 'Use arrow keys to select Close');
         closeHint.style.cssText = 'position:absolute;top:8px;right:12px;display:flex;align-items:center;gap:5px;color:#ddd;font-size:12px;font-weight:bold;';
         closeHint.append('Use arrow keys to select Close');
         overlay.appendChild(closeHint);
@@ -60,50 +60,38 @@
         return overlay;
     }
 
+    
     function refreshLabels() {
         keyElements.forEach((key) => {
             const d = key._definition;
-            key.textContent = '';
+
             if (d.special === 'Backspace') {
                 key.textContent = 'Backspace';
             } else if (d.special === 'Enter') {
                 key.textContent = 'Search';
             } else if (d.special === 'Shift') {
-                key.append('Shift ');
-                key.append(createButtonBadge('LT', 'lt'));
+                key.textContent = shifted ? 'Shift On' : 'Shift';
             } else {
-                key.textContent = d.special ? d.label : (shifted ? d[1] : d[0]);
+                key.textContent = d.special
+                    ? d.label
+                    : (shifted ? d[1] : d[0]);
             }
-            key.setAttribute('aria-label', 'Use arrow keys to select Close');
-            key.style.background = keyElements[selected] === key ? '#4CAF50' : '#303038';
-            key.style.color = keyElements[selected] === key ? '#111' : '#fff';
-        });
-    }
 
-    function createButtonBadge(label, type) {
-        const badge = document.createElement('span');
-        badge.textContent = label;
-        badge.className = 'cbvk-gamepad-badge cbvk-badge-' + (type || label.toLowerCase());
-        badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-sizing:border-box;font-family:Arial,sans-serif;font-size:12px;font-weight:900;line-height:1;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.55);';
-        if (type === 'lt') {
-            // A compact trigger-like badge: broad at the top with softened
-            // lower corners, visually distinct from the face buttons.
-            badge.style.width = '31px';
-            badge.style.height = '22px';
-            badge.style.marginLeft = '2px';
-            badge.style.borderRadius = '7px 7px 11px 11px';
-            badge.style.background = 'linear-gradient(#777, #333)';
-            badge.style.border = '2px solid #aaa';
-        } else {
-            badge.style.width = '22px';
-            badge.style.height = '22px';
-            badge.style.borderRadius = '50%';
-            badge.style.marginLeft = '3px';
-            badge.style.background = type === 'x' ? '#2376d8' : type === 'b' ? '#d73535' : '#e2bd22';
-            if (type === 'y') badge.style.color = '#151515';
-            badge.style.border = '1px solid rgba(255,255,255,.65)';
-        }
-        return badge;
+            key.setAttribute(
+                'aria-label',
+                d.special || (shifted ? d[1] : d[0])
+            );
+
+            key.style.background =
+                keyElements[selected] === key
+                    ? '#4CAF50'
+                    : '#303038';
+
+            key.style.color =
+                keyElements[selected] === key
+                    ? '#111'
+                    : '#fff';
+        });
     }
 
     function focusSelected() {
@@ -314,12 +302,8 @@
         cursorMove: updateCursorSelection,
         animateSelected: () => { if (target) animateKey(keyElements[selected]); },
         enter: () => {
-            if (target) {
-                const enterKey = keyElements.find((key) => key._definition.special === 'Enter');
-                animateKey(enterKey);
-                setTimeout(close, 110);
-            }
-            return true;
+                submit();
+                return true;
         },
         setShift: (on) => { if (target) { shifted = !!on; refreshLabels(); } },
         cursorTarget: () => {
