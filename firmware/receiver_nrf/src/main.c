@@ -10,6 +10,8 @@
 
 #include <string.h>
 #include "myo_ble.h"
+#include "usb_hid.h"
+
 
 LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
 
@@ -386,10 +388,17 @@ int main(void)
     gpio_pin_configure_dt(
         &led, GPIO_OUTPUT_INACTIVE);
 
+    
     LOG_INF("GestureControl receiver starting");
     atomic_set(&led_mode, LED_MODE_LEGACY);
 
-    int err = bt_enable(NULL);
+    int err = usb_hid_init();
+
+    if (err) {
+        LOG_ERR("USB HID init failed: %d", err);
+    }
+    
+    err = bt_enable(NULL);
 
     if (err) {
         LOG_ERR("Bluetooth init failed: %d", err);
