@@ -12,7 +12,7 @@
         compatible = "zephyr,hid-device";
         label = "GestureControl HID";
 
-        protocol-code = "none";
+        protocol-code = "keyboard";
 
         in-report-size = <64>;
         in-polling-period-us = <1000>;

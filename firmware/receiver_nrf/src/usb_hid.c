@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_hid.h>
+#include <zephyr/usb/class/hid.h>
 
 LOG_MODULE_REGISTER(myo_usb, LOG_LEVEL_INF);
 
@@ -19,7 +20,7 @@ LOG_MODULE_REGISTER(myo_usb, LOG_LEVEL_INF);
 #define HID_ID_MEDIA    3
 
 #define MYO_USB_VID 0xCAFE
-#define MYO_USB_PID 0x4011
+#define MYO_USB_PID 0x4013
 
 /*
  * One HID interface with three application
@@ -29,85 +30,9 @@ LOG_MODULE_REGISTER(myo_usb, LOG_LEVEL_INF);
  * Mouse report:    ID + 4 bytes
  * Media report:    ID + 2 bytes
  */
-static const uint8_t hid_report_desc[] = {
 
-    0x05, 0x01,        /* Generic Desktop */
-    0x09, 0x06,        /* Keyboard */
-    0xA1, 0x01,        /* Application */
-    0x85, HID_ID_KEYBOARD,
-
-    0x05, 0x07,        /* Keyboard usage page */
-    0x19, 0xE0,
-    0x29, 0xE7,
-    0x15, 0x00,
-    0x25, 0x01,
-    0x75, 0x01,
-    0x95, 0x08,
-    0x81, 0x02,        /* Modifier keys */
-
-    0x95, 0x01,
-    0x75, 0x08,
-    0x81, 0x03,        /* Reserved */
-
-    0x05, 0x07,
-    0x19, 0x00,
-    0x29, 0x65,
-    0x15, 0x00,
-    0x25, 0x65,
-    0x75, 0x08,
-    0x95, 0x06,
-    0x81, 0x00,        /* Six key slots */
-    0xC0,
-
-    /* Mouse */
-    0x05, 0x01,
-    0x09, 0x02,
-    0xA1, 0x01,
-    0x85, HID_ID_MOUSE,
-
-    0x09, 0x01,
-    0xA1, 0x00,
-
-    0x05, 0x09,        /* Buttons */
-    0x19, 0x01,
-    0x29, 0x03,
-    0x15, 0x00,
-    0x25, 0x01,
-    0x95, 0x03,
-    0x75, 0x01,
-    0x81, 0x02,
-
-    0x95, 0x01,
-    0x75, 0x05,
-    0x81, 0x03,        /* Padding */
-
-    0x05, 0x01,
-    0x09, 0x30,        /* X */
-    0x09, 0x31,        /* Y */
-    0x09, 0x38,        /* Wheel */
-    0x15, 0x81,        /* -127 */
-    0x25, 0x7F,        /* +127 */
-    0x75, 0x08,
-    0x95, 0x03,
-    0x81, 0x06,
-    0xC0,
-    0xC0,
-
-    /* Consumer / media control */
-    0x05, 0x0C,
-    0x09, 0x01,
-    0xA1, 0x01,
-    0x85, HID_ID_MEDIA,
-
-    0x15, 0x00,
-    0x26, 0xFF, 0x03,
-    0x19, 0x00,
-    0x2A, 0xFF, 0x03,
-    0x75, 0x10,
-    0x95, 0x01,
-    0x81, 0x00,
-    0xC0
-};
+static const uint8_t hid_report_desc[] =
+    HID_KEYBOARD_REPORT_DESC();
 
 USBD_DEVICE_DEFINE(
     myo_usbd,
@@ -158,6 +83,7 @@ static void hid_iface_ready(
             ready ? "ready" : "not ready");
 }
 
+
 static int hid_get_report(
     const struct device *dev,
     uint8_t type,
@@ -167,35 +93,20 @@ static int hid_get_report(
 {
     ARG_UNUSED(dev);
 
-    if (type != HID_REPORT_TYPE_INPUT) {
+    if (type != HID_REPORT_TYPE_INPUT ||
+        id != 0) {
         return -ENOTSUP;
     }
 
-    size_t size;
-
-    switch (id) {
-    case HID_ID_KEYBOARD:
-        size = 9;
-        break;
-    case HID_ID_MOUSE:
-        size = 5;
-        break;
-    case HID_ID_MEDIA:
-        size = 3;
-        break;
-    default:
-        return -ENOTSUP;
-    }
-
-    if (len < size) {
+    if (len < 8) {
         return -ENOBUFS;
     }
 
-    memset(buf, 0, size);
-    buf[0] = id;
+    memset(buf, 0, 8);
 
-    return (int)size;
+    return 8;
 }
+
 
 static void hid_set_idle(
     const struct device *dev,
@@ -222,11 +133,42 @@ static uint32_t hid_get_idle(
     return id <= 3 ? idle_ms[id] : 0;
 }
 
+static void hid_set_protocol(
+    const struct device *dev,
+    uint8_t protocol)
+{
+    ARG_UNUSED(dev);
+
+    LOG_INF("Keyboard protocol: %u", protocol);
+}
+
+static int hid_set_report(
+    const struct device *dev,
+    uint8_t type,
+    uint8_t id,
+    uint16_t len,
+    const uint8_t *buf)
+{
+    ARG_UNUSED(dev);
+    ARG_UNUSED(buf);
+
+    // Accept the host's keyboard LED output.
+    if (type == HID_REPORT_TYPE_OUTPUT &&
+        id == 0 &&
+        len == 1) {
+        return 0;
+    }
+
+    return -ENOTSUP;
+}
+
 static const struct hid_device_ops hid_ops = {
     .iface_ready = hid_iface_ready,
     .get_report = hid_get_report,
+    .set_report = hid_set_report,
     .set_idle = hid_set_idle,
     .get_idle = hid_get_idle,
+    .set_protocol = hid_set_protocol,
 };
 
 /* Handle USB cable connection and removal. */
@@ -283,15 +225,18 @@ static int send_report(
 }
 
 
+
 static int keyboard_tap(uint8_t key)
 {
-    UDC_STATIC_BUF_DEFINE(report, 9);
+    UDC_STATIC_BUF_DEFINE(report, 8);
 
-    // Press the requested key.
+    // Standard 8-byte keyboard report.
     memset(report, 0, sizeof(report));
 
-    report[0] = HID_ID_KEYBOARD;
-    report[3] = key;
+    // Byte 0: modifiers
+    // Byte 1: reserved
+    // Byte 2: first key
+    report[2] = key;
 
     int err = send_report(report, sizeof(report));
 
@@ -299,12 +244,10 @@ static int keyboard_tap(uint8_t key)
         return err;
     }
 
-    // Hold the key for 35 ms.
     k_msleep(35);
 
     // Release all keys.
     memset(report, 0, sizeof(report));
-    report[0] = HID_ID_KEYBOARD;
 
     err = send_report(report, sizeof(report));
 
@@ -312,12 +255,11 @@ static int keyboard_tap(uint8_t key)
         return err;
     }
 
-    // Give the host time to observe release
-    // before another queued key press.
     k_msleep(15);
 
     return 0;
 }
+
 
 //Execute one queued HID action
 static int execute_hid_action(

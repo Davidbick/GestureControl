@@ -323,7 +323,6 @@ static void process_gesture(
 
         // Toggle physical LED.
         gesture_led_on = !gesture_led_on;
-
         LOG_INF("LIGHT: %s",
                 gesture_led_on ? "ON" : "OFF");
 
