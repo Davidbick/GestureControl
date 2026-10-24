@@ -16,6 +16,10 @@ LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
 
 #define LED_NODE DT_ALIAS(led0)
 #define RX_TIMEOUT_MS 1500
+#define RGB_LED_PIN 29
+
+static const struct device *rgb_gpio =
+    DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED_NODE, gpios);
@@ -149,6 +153,20 @@ int main(void)
 
     gpio_pin_configure_dt(
         &led, GPIO_OUTPUT_INACTIVE);
+    
+    if (!device_is_ready(rgb_gpio)) {
+        LOG_ERR("RGB GPIO not ready");
+        return 0;
+    }
+
+    // Active LOW: HIGH = off, LOW = on
+    int rgb_err = gpio_pin_configure(
+        rgb_gpio, RGB_LED_PIN, GPIO_OUTPUT_HIGH);
+
+    if (rgb_err) {
+        LOG_ERR("RGB GPIO configuration failed: %d", rgb_err);
+        return 0;
+    }
 
     LOG_INF("GestureControl receiver starting");
 
@@ -185,6 +203,8 @@ int main(void)
             fresh;
 
         gpio_pin_set_dt(&led, led_on ? 1 : 0);
+        // External RGB LED, active LOW
+        gpio_pin_set(rgb_gpio, RGB_LED_PIN, led_on ? 0 : 1);
         bool linked = atomic_get(&link_up) != 0;
         bool valid = atomic_get(&rx_valid) != 0;
 
