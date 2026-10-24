@@ -15,15 +15,73 @@ LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
 
 #define LED_NODE DT_ALIAS(led0)
 #define RX_TIMEOUT_MS 1500
+#define TENSE_GUARD_MS 250
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED_NODE, gpios);
 
+    // Legacy: LED reflects orientation validity.
+// Gesture: LED is controlled by gesture events.
+enum led_control_mode {
+    LED_MODE_LEGACY,
+    LED_MODE_GESTURE
+};
+
 static atomic_t link_up;
 static atomic_t rx_valid;
 static atomic_t last_rx_ms;
+static atomic_t led_mode;
+static atomic_t session_epoch;
 
-// Called whenever the wearable writes a classification
+// A small event queue separates BLE callbacks
+// from physical actuation.
+struct queued_gesture {
+    struct myo_gesture_packet packet;
+    uint32_t session;
+    uint32_t timestamp_ms;
+};
+
+K_MSGQ_DEFINE(
+    gesture_queue,
+    sizeof(struct queued_gesture),
+    8,
+    4
+);
+
+// Actuation state, owned by main thread.
+static bool gesture_led_on;
+static bool sequence_seen;
+static uint8_t last_sequence;
+static uint32_t processed_session = UINT32_MAX;
+
+static bool tense_seen;
+static uint32_t last_tense_ms;
+
+// Gesture helpers
+static const char *gesture_name(uint8_t gesture)
+{
+    switch (gesture) {
+    case MYO_GESTURE_SWIPE_UP:
+        return "SWIPE_UP";
+
+    case MYO_GESTURE_SWIPE_DOWN:
+        return "SWIPE_DOWN";
+
+    case MYO_GESTURE_SWIPE_LEFT:
+        return "SWIPE_LEFT";
+
+    case MYO_GESTURE_SWIPE_RIGHT:
+        return "SWIPE_RIGHT";
+
+    case MYO_GESTURE_TENSE:
+        return "TENSE";
+
+    default:
+        return "UNKNOWN";
+    }
+}
+
+// Legacy validity characteristic
 static ssize_t write_state(
     struct bt_conn *conn,
     const struct bt_gatt_attr *attr,
@@ -81,19 +139,35 @@ static ssize_t write_gesture(
         return 0;
     }
 
-    const struct myo_gesture_packet *packet = buf;
+   struct queued_gesture event;
 
-    if (!myo_gesture_valid(packet->gesture)) {
-        LOG_WRN("Invalid gesture: %u", packet->gesture);
-        return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+    memcpy(&event.packet, buf, sizeof(event.packet));
+
+    if (!myo_gesture_valid(event.packet.gesture)) {
+        LOG_WRN("Invalid gesture ID: %u",
+                event.packet.gesture);
+
+        return BT_GATT_ERR(
+            BT_ATT_ERR_VALUE_NOT_ALLOWED);
     }
 
-    LOG_INF("Gesture received: id=%u seq=%u",
-            packet->gesture,
-            packet->sequence);
+    event.session =
+        (uint32_t)atomic_get(&session_epoch);
+
+    event.timestamp_ms = k_uptime_get_32();
+
+    if (k_msgq_put(
+            &gesture_queue, &event, K_NO_WAIT) != 0) {
+
+        LOG_WRN("Gesture queue full");
+
+        return BT_GATT_ERR(
+            BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+    }
 
     return len;
 }
+
 
 // Custom GestureControl GATT service
 BT_GATT_SERVICE_DEFINE(myo_service,
@@ -174,6 +248,9 @@ static void disconnected(
     atomic_set(&link_up, 0);
     atomic_set(&rx_valid, 0);
 
+    atomic_inc(&session_epoch);
+    k_msgq_purge(&gesture_queue);
+
     LOG_INF("Disconnected: %u", reason);
 
     start_advertising();
@@ -183,6 +260,117 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
 };
+
+// Gesture actuation dispatcher
+static void process_gesture(
+    const struct queued_gesture *event)
+{
+    if (!atomic_get(&link_up) ||
+        event->session !=
+            (uint32_t)atomic_get(&session_epoch)) {
+        return;
+    }
+
+    // New BLE session: reset duplicate tracking.
+    if (event->session != processed_session) {
+        processed_session = event->session;
+
+        sequence_seen = false;
+        tense_seen = false;
+    }
+
+    uint8_t gesture = event->packet.gesture;
+    uint8_t sequence = event->packet.sequence;
+
+    // Reject repeated packets carrying the
+    // same sequence number.
+    if (sequence_seen && sequence == last_sequence) {
+        LOG_WRN("Duplicate packet: seq=%u", sequence);
+        return;
+    }
+
+    sequence_seen = true;
+    last_sequence = sequence;
+
+    LOG_INF("Gesture: %s seq=%u",
+            gesture_name(gesture), sequence);
+
+    // A classified gesture now owns the actuator.
+    atomic_set(&led_mode, LED_MODE_GESTURE);
+
+    switch (gesture) {
+
+    case MYO_GESTURE_TENSE:
+
+        // Extra protection against accidental
+        // rapid repeated TENSE classifications.
+        if (tense_seen &&
+            (uint32_t)(event->timestamp_ms -
+                        last_tense_ms) < TENSE_GUARD_MS) {
+
+            LOG_INF("TENSE suppressed by cooldown");
+            return;
+        }
+
+        tense_seen = true;
+        last_tense_ms = event->timestamp_ms;
+
+        gesture_led_on = !gesture_led_on;
+
+        LOG_INF("LIGHT: %s",
+                gesture_led_on ? "ON" : "OFF");
+        break;
+
+    case MYO_GESTURE_SWIPE_UP:
+    case MYO_GESTURE_SWIPE_DOWN:
+    case MYO_GESTURE_SWIPE_LEFT:
+    case MYO_GESTURE_SWIPE_RIGHT:
+        // Recognized, but no physical LED action.
+        // USB HID mappings will be added here.
+        break;
+
+    default:
+        break;
+    }
+}
+
+// LED output
+static void update_led(void)
+{
+    bool led_on;
+
+    if (atomic_get(&led_mode) == LED_MODE_GESTURE) {
+        led_on = gesture_led_on;
+    } else {
+
+        // Original wearable validity behavior.
+        uint32_t now = k_uptime_get_32();
+
+        bool fresh =
+            (uint32_t)(now -
+                (uint32_t)atomic_get(&last_rx_ms))
+            < RX_TIMEOUT_MS;
+
+        led_on =
+            atomic_get(&link_up) &&
+            atomic_get(&rx_valid) &&
+            fresh;
+    }
+
+    static int previous_output = -1;
+    int requested_output = led_on ? 1 : 0;
+
+    if (requested_output != previous_output) {
+        int err = gpio_pin_set_dt(
+            &led, requested_output);
+
+        if (err) {
+            LOG_ERR("LED update failed: %d", err);
+        } else {
+            previous_output = requested_output;
+        }
+    }
+}
 
 int main(void)
 {
@@ -195,6 +383,7 @@ int main(void)
         &led, GPIO_OUTPUT_INACTIVE);
 
     LOG_INF("GestureControl receiver starting");
+    atomic_set(&led_mode, LED_MODE_LEGACY);
 
     int err = bt_enable(NULL);
 
@@ -206,21 +395,19 @@ int main(void)
     start_advertising();
 
     while (1) {
-        uint32_t now = k_uptime_get_32();
+        struct queued_gesture event;
 
-        bool fresh =
-            (uint32_t)(now -
-                (uint32_t)atomic_get(&last_rx_ms))
-            < RX_TIMEOUT_MS;
+        // Process BLE events in the main thread.
+        if (k_msgq_get(
+                &gesture_queue,
+                &event,
+                K_MSEC(25)) == 0) {
 
-        bool led_on =
-            atomic_get(&link_up) &&
-            atomic_get(&rx_valid) &&
-            fresh;
+            process_gesture(&event);
+        }
 
-        gpio_pin_set_dt(&led, led_on ? 1 : 0);
-
-        k_msleep(50);
+        // Update the physical output independently.
+        update_led();
     }
 
     return 0;
