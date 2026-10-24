@@ -309,8 +309,7 @@ static void process_gesture(
 
     case MYO_GESTURE_TENSE:
 
-        // Extra protection against accidental
-        // rapid repeated TENSE classifications.
+        // Prevent accidental rapid TENSE repeats.
         if (tense_seen &&
             (uint32_t)(event->timestamp_ms -
                         last_tense_ms) < TENSE_GUARD_MS) {
@@ -322,41 +321,41 @@ static void process_gesture(
         tense_seen = true;
         last_tense_ms = event->timestamp_ms;
 
+        // Toggle physical LED.
         gesture_led_on = !gesture_led_on;
 
         LOG_INF("LIGHT: %s",
                 gesture_led_on ? "ON" : "OFF");
-        
-        // Also double-click on the laptop.
-        hid_err = myo_usb_hid_enqueue(
-            MYO_HID_DOUBLE_CLICK);
 
+        // Send Enter to laptop.
+        hid_err = myo_usb_hid_enqueue(
+            MYO_HID_ENTER);
         break;
 
-   case MYO_GESTURE_SWIPE_UP:
+    case MYO_GESTURE_SWIPE_UP:
         hid_err = myo_usb_hid_enqueue(
-            MYO_HID_SCROLL_UP);
+            MYO_HID_UP);
         break;
 
     case MYO_GESTURE_SWIPE_DOWN:
         hid_err = myo_usb_hid_enqueue(
-            MYO_HID_SCROLL_DOWN);
+            MYO_HID_DOWN);
         break;
 
     case MYO_GESTURE_SWIPE_LEFT:
         hid_err = myo_usb_hid_enqueue(
-            MYO_HID_PREVIOUS_TAB);
+            MYO_HID_LEFT);
         break;
 
     case MYO_GESTURE_SWIPE_RIGHT:
         hid_err = myo_usb_hid_enqueue(
-            MYO_HID_NEXT_TAB);
+            MYO_HID_RIGHT);
         break;
 
     default:
         break;
     }
-    
+
     if (hid_err == -ENOTCONN) {
         LOG_DBG("USB not connected, HID skipped");
     } else if (hid_err) {

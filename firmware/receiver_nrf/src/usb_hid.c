@@ -259,21 +259,12 @@ bool usb_hid_ready(void)
 }
 
 
-/*
- * Stage 2: Laptop HID actions
- *
- * All reports are submitted from one worker thread.
- * This keeps the BLE and LED dispatcher responsive.
- */
-
-#define HID_MOD_CTRL  0x01
-#define HID_MOD_SHIFT 0x02
-#define HID_KEY_TAB   0x2B
-
-#define HID_MOUSE_LEFT 0x01
-
-#define HID_USAGE_VOLUME_UP   0x00E9
-#define HID_USAGE_VOLUME_DOWN 0x00EA
+// Standard USB HID keyboard usage codes.
+#define HID_KEY_ENTER 0x28
+#define HID_KEY_RIGHT 0x4F
+#define HID_KEY_LEFT  0x50
+#define HID_KEY_DOWN  0x51
+#define HID_KEY_UP    0x52
 
 /* Submit one HID input report. */
 static int send_report(
@@ -291,22 +282,15 @@ static int send_report(
         dev, length, report);
 }
 
-/*
- * Keyboard shortcut
- *
- * Send key press, then release all keys.
- * This prevents stuck Ctrl/Shift keys.
- */
-static int keyboard_shortcut(
-    uint8_t modifiers,
-    uint8_t key)
+
+static int keyboard_tap(uint8_t key)
 {
     UDC_STATIC_BUF_DEFINE(report, 9);
 
+    // Press the requested key.
     memset(report, 0, sizeof(report));
 
     report[0] = HID_ID_KEYBOARD;
-    report[1] = modifiers;
     report[3] = key;
 
     int err = send_report(report, sizeof(report));
@@ -315,159 +299,53 @@ static int keyboard_shortcut(
         return err;
     }
 
+    // Hold the key for 35 ms.
     k_msleep(35);
 
-    /* Release every key and modifier. */
+    // Release all keys.
     memset(report, 0, sizeof(report));
     report[0] = HID_ID_KEYBOARD;
 
-    return send_report(report, sizeof(report));
-}
-
-/*
- * Mouse report
- *
- * Byte 0: Report ID
- * Byte 1: Buttons
- * Byte 2: X movement
- * Byte 3: Y movement
- * Byte 4: Wheel movement
- */
-static int mouse_report(
-    uint8_t buttons,
-    int8_t wheel)
-{
-    UDC_STATIC_BUF_DEFINE(report, 5);
-
-    memset(report, 0, sizeof(report));
-
-    report[0] = HID_ID_MOUSE;
-    report[1] = buttons;
-    report[4] = (uint8_t)wheel;
-
-    return send_report(report, sizeof(report));
-}
-
-/* One discrete scroll step. */
-static int mouse_scroll(int8_t direction)
-{
-    int err = mouse_report(0, direction);
+    err = send_report(report, sizeof(report));
 
     if (err) {
         return err;
     }
 
-    k_msleep(20);
-
-    /* Neutral report after relative movement. */
-    return mouse_report(0, 0);
-}
-
-/* Two left clicks within the double-click window. */
-static int mouse_double_click(void)
-{
-    for (int i = 0; i < 2; i++) {
-
-        /* Press left mouse button. */
-        int err = mouse_report(HID_MOUSE_LEFT, 0);
-
-        if (err) {
-            return err;
-        }
-
-        k_msleep(35);
-
-        /* Release mouse button. */
-        err = mouse_report(0, 0);
-
-        if (err) {
-            return err;
-        }
-
-        if (i == 0) {
-            k_msleep(90);
-        }
-    }
+    // Give the host time to observe release
+    // before another queued key press.
+    k_msleep(15);
 
     return 0;
 }
 
-/*
- * Consumer Control report
- *
- * Media usages are 16-bit values.
- * Example: Volume Up = 0x00E9.
- */
-static int media_key(uint16_t usage)
-{
-    UDC_STATIC_BUF_DEFINE(report, 3);
-
-    report[0] = HID_ID_MEDIA;
-    report[1] = (uint8_t)(usage & 0xFF);
-    report[2] = (uint8_t)(usage >> 8);
-
-    int err = send_report(report, sizeof(report));
-
-    if (err) {
-        return err;
-    }
-
-    k_msleep(35);
-
-    /* Release media key. */
-    report[1] = 0;
-    report[2] = 0;
-
-    return send_report(report, sizeof(report));
-}
-
-/*
- * Execute one queued laptop action.
- *
- * This runs outside the BLE callback and
- * outside the receiver's main actuation loop.
- */
+//Execute one queued HID action
 static int execute_hid_action(
     enum myo_hid_action action)
 {
     switch (action) {
 
-    case MYO_HID_SCROLL_UP:
-        return mouse_scroll(1);
+    case MYO_HID_UP:
+        return keyboard_tap(HID_KEY_UP);
 
-    case MYO_HID_SCROLL_DOWN:
-        return mouse_scroll(-1);
+    case MYO_HID_DOWN:
+        return keyboard_tap(HID_KEY_DOWN);
 
-    case MYO_HID_PREVIOUS_TAB:
-        return keyboard_shortcut(
-            HID_MOD_CTRL | HID_MOD_SHIFT,
-            HID_KEY_TAB);
+    case MYO_HID_LEFT:
+        return keyboard_tap(HID_KEY_LEFT);
 
-    case MYO_HID_NEXT_TAB:
-        return keyboard_shortcut(
-            HID_MOD_CTRL,
-            HID_KEY_TAB);
+    case MYO_HID_RIGHT:
+        return keyboard_tap(HID_KEY_RIGHT);
 
-    case MYO_HID_DOUBLE_CLICK:
-        return mouse_double_click();
-
-    case MYO_HID_VOLUME_UP:
-        return media_key(HID_USAGE_VOLUME_UP);
-
-    case MYO_HID_VOLUME_DOWN:
-        return media_key(HID_USAGE_VOLUME_DOWN);
+    case MYO_HID_ENTER:
+        return keyboard_tap(HID_KEY_ENTER);
 
     default:
         return -EINVAL;
     }
 }
 
-/*
- * Dedicated HID worker.
- *
- * Actions run sequentially so reports from
- * different gestures cannot interleave.
- */
+
 static void hid_worker(
     void *arg1,
     void *arg2,
@@ -498,7 +376,7 @@ static void hid_worker(
     }
 }
 
-/* Independent thread for HID actions. */
+// Independent thread for HID actions
 K_THREAD_DEFINE(
     hid_worker_id,
     1536,
@@ -509,13 +387,11 @@ K_THREAD_DEFINE(
     0
 );
 
-/* Public entry point for the BLE dispatcher.
- *
- * Returns immediately after queueing the action.*/
+// Public entry point for the BLE dispatcher
 int myo_usb_hid_enqueue(enum myo_hid_action action)
 {
-    if (action < MYO_HID_SCROLL_UP ||
-        action > MYO_HID_VOLUME_DOWN) {
+    if (action < MYO_HID_UP ||
+        action > MYO_HID_ENTER) {
         return -EINVAL;
     }
 
@@ -554,7 +430,6 @@ int myo_usb_hid_init(void)
         return err;
     }
 
-    /* Register USB string descriptors. */
     err = usbd_add_descriptor(&myo_usbd, &myo_lang);
     if (err) return err;
 
@@ -564,7 +439,6 @@ int myo_usb_hid_init(void)
     err = usbd_add_descriptor(&myo_usbd, &myo_product);
     if (err) return err;
 
-    /* Register full-speed configuration. */
     err = usbd_add_configuration(
         &myo_usbd,
         USBD_SPEED_FS,
@@ -572,7 +446,6 @@ int myo_usb_hid_init(void)
     );
     if (err) return err;
 
-    /* Register only our HID class instance. */
     err = usbd_register_class(
         &myo_usbd,
         "hid_0",
@@ -591,7 +464,6 @@ int myo_usb_hid_init(void)
         return err;
     }
 
-    /* Some boards cannot detect VBUS directly. */
     if (!usbd_can_detect_vbus(&myo_usbd)) {
         err = usbd_enable(&myo_usbd);
         if (err) return err;
