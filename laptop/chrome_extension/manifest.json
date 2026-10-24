@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "GestureControl TV Navigation",
+  "version": "1.2.0",
+  "author": "SeeSharpSoft, adapted for GestureControl",
+  "description": "TV-style browser navigation using GestureControl USB HID.",
+  "homepage_url": "https://github.com/SeeSharpSoft/couch-browser",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "64": "icons/icon64.png",
+    "128": "icons/icon128.png",
+    "256": "icons/icon256.png",
+    "512": "icons/icon512.png"
+  },
+  "permissions": ["tabs", "storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Couch Browser Status",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "64": "icons/icon64.png",
+      "128": "icons/icon128.png",
+      "256": "icons/icon256.png",
+      "512": "icons/icon512.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["hid-input.js", "virtual-keyboard.js", "core.js", "sites/*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
