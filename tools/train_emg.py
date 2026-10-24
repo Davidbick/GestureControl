@@ -2,6 +2,7 @@ from pathlib import Path
 from collections import Counter
 import csv
 import numpy as np
+from export_emg_c import export_emg_tree
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -231,6 +232,13 @@ def main():
     print("\nProvisional best deployable tree:", name)
     print("Validation was used in selection, so this")
     print("score is not an unbiased final test estimate.")
+
+    # Export selected decision tree to C for the wearable
+    export_emg_tree(
+        model=model,
+        feature_names=[f"feature_{i}" for i in cols],
+        output_dir=ROOT / "firmware/wearable/src",
+    )
 
     pred = model.predict(vx[:, cols])
 
