@@ -15,21 +15,8 @@
 
 LOG_MODULE_REGISTER(myo_usb, LOG_LEVEL_INF);
 
-#define HID_ID_KEYBOARD 1
-#define HID_ID_MOUSE    2
-#define HID_ID_MEDIA    3
-
 #define MYO_USB_VID 0xCAFE
 #define MYO_USB_PID 0x4013
-
-/*
- * One HID interface with three application
- * collections and separate report IDs.
- *
- * Keyboard report: ID + 8 bytes
- * Mouse report:    ID + 4 bytes
- * Media report:    ID + 2 bytes
- */
 
 static const uint8_t hid_report_desc[] =
     HID_KEYBOARD_REPORT_DESC();
