@@ -15,13 +15,18 @@ struct gesture_engine {
     bool select_armed;
     bool rest_tracking;
     bool flex_tracking;
-    bool have_valid_orientation;
     bool mode_switch_pending;
+    bool swipe_enabled;
+    bool swipe_ready;
+    bool swipe_center_valid;
+    bool center_tracking;
 
     uint32_t rest_since_ms;
     uint32_t flex_since_ms;
     uint32_t flex_last_seen_ms;
-    uint32_t last_valid_ms;
+    uint32_t center_since_ms;
+
+    struct imu_accel_sample swipe_center;
 
     uint32_t motion_block_until_ms;
     uint32_t cooldown_until_ms;
@@ -35,6 +40,7 @@ enum myo_gesture gesture_engine_update(
     bool orientation_valid,
     bool emg_ready,
     emg_class_t emg_class,
+    const struct imu_accel_sample *accel,
     bool significant_motion,
     enum swipe_event swipe
 );

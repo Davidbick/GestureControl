@@ -2,13 +2,16 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <math.h>
 
 #define REST_CONFIRM_MS       350U
 #define FLEX_HOLD_MS         1100U
 #define MODE_HOLD_MS         5000U
+#define SWIPE_GATE_HOLD_MS   3000U
+#define CENTER_STABLE_MS      250U
+#define CENTER_COS_THRESHOLD  0.9659258f
 #define FLEX_RELEASE_GRACE_MS 200U
 #define MOTION_BLOCK_MS       650U
-#define SWIPE_GRACE_MS        450U
 #define ACTION_COOLDOWN_MS    400U
 
 static bool before_deadline(uint32_t now, uint32_t deadline)
@@ -32,6 +35,68 @@ static enum myo_gesture swipe_to_gesture(enum swipe_event swipe)
     }
 }
 
+// Acceleration gives a gravity-relative hand orientation.
+// Yaw around the gravity axis cannot be measured from this vector.
+static bool near_swipe_center(
+    const struct gesture_engine *engine,
+    const struct imu_accel_sample *accel)
+{
+    if (!engine->swipe_center_valid || accel == NULL) {
+        return false;
+    }
+
+    float x = (float)accel->x_mg;
+    float y = (float)accel->y_mg;
+    float z = (float)accel->z_mg;
+    float cx = (float)engine->swipe_center.x_mg;
+    float cy = (float)engine->swipe_center.y_mg;
+    float cz = (float)engine->swipe_center.z_mg;
+
+    float magnitude_squared = x * x + y * y + z * z;
+    float center_squared = cx * cx + cy * cy + cz * cz;
+
+    // Ignore samples dominated by acceleration from movement.
+    if (magnitude_squared < 800.0f * 800.0f ||
+        magnitude_squared > 1200.0f * 1200.0f ||
+        center_squared < 1.0f) {
+        return false;
+    }
+
+    float dot = x * cx + y * cy + z * cz;
+
+    // Within 15 degrees of the orientation saved at activation.
+    return dot >= CENTER_COS_THRESHOLD *
+        sqrtf(magnitude_squared * center_squared);
+}
+
+static void update_swipe_rearm(
+    struct gesture_engine *engine,
+    uint32_t now_ms,
+    const struct imu_accel_sample *accel,
+    bool significant_motion)
+{
+    if (!engine->swipe_enabled || engine->swipe_ready) {
+        return;
+    }
+
+    if (significant_motion || !near_swipe_center(engine, accel)) {
+        engine->center_tracking = false;
+        return;
+    }
+
+    if (!engine->center_tracking) {
+        engine->center_tracking = true;
+        engine->center_since_ms = now_ms;
+        return;
+    }
+
+    if ((uint32_t)(now_ms - engine->center_since_ms) >=
+        CENTER_STABLE_MS) {
+        engine->swipe_ready = true;
+        engine->center_tracking = false;
+    }
+}
+
 void gesture_engine_init(struct gesture_engine *engine)
 {
     if (engine == NULL) {
@@ -51,23 +116,13 @@ enum myo_gesture gesture_engine_update(
     bool orientation_valid,
     bool emg_ready,
     emg_class_t emg_class,
+    const struct imu_accel_sample *accel,
     bool significant_motion,
     enum swipe_event swipe)
 {
     if (engine == NULL) {
         return MYO_GESTURE_NONE;
     }
-
-    // Remember the last good control orientation.
-    if (orientation_valid) {
-        engine->last_valid_ms = now_ms;
-        engine->have_valid_orientation = true;
-    }
-
-    bool recently_valid =
-        engine->have_valid_orientation &&
-        (uint32_t)(now_ms - engine->last_valid_ms)
-            <= SWIPE_GRACE_MS;
 
     // Any significant angular motion interrupts
     // an ongoing FLEX candidate.
@@ -78,29 +133,28 @@ enum myo_gesture gesture_engine_update(
         engine->flex_tracking = false;
     }
 
-    // Swipes always have priority over muscle
-    // classification. The IMU detector itself
-    // handles return-to-neutral and re-arming.
+    // Only enable laptop arrows after a deliberate 3-second FLEX.
+    // After each accepted swipe, returning near the saved center
+    // for 250 ms is required before another arrow key can be sent.
+    update_swipe_rearm(engine, now_ms, accel, significant_motion);
+
     if (swipe != SWIPE_NONE) {
-
-        engine->motion_block_until_ms =
-            now_ms + MOTION_BLOCK_MS;
-
-        engine->flex_tracking = false;
-        engine->rest_tracking = false;
-
-        // Force a new REST before another SELECT.
-        engine->select_armed = false;
-
-        if (!recently_valid ||
-            before_deadline(
-                now_ms, engine->cooldown_until_ms)) {
+        if (!engine->swipe_enabled || !engine->swipe_ready) {
             return MYO_GESTURE_NONE;
         }
 
-        engine->cooldown_until_ms =
-            now_ms + ACTION_COOLDOWN_MS;
+        engine->swipe_ready = false;
+        engine->center_tracking = false;
+        engine->motion_block_until_ms = now_ms + MOTION_BLOCK_MS;
+        engine->flex_tracking = false;
+        engine->rest_tracking = false;
+        engine->select_armed = false;
 
+        if (before_deadline(now_ms, engine->cooldown_until_ms)) {
+            return MYO_GESTURE_NONE;
+        }
+
+        engine->cooldown_until_ms = now_ms + ACTION_COOLDOWN_MS;
         return swipe_to_gesture(swipe);
     }
 
@@ -155,6 +209,11 @@ enum myo_gesture gesture_engine_update(
         if ((uint32_t)(now_ms - engine->flex_since_ms)
             >= MODE_HOLD_MS) {
             engine->mode_switch_pending = true;
+            // A receiver change always exits laptop swipe control.
+            engine->swipe_enabled = false;
+            engine->swipe_ready = false;
+            engine->swipe_center_valid = false;
+            engine->center_tracking = false;
             engine->flex_tracking = false;
             engine->select_armed = false;
             engine->rest_tracking = false;
@@ -175,6 +234,25 @@ enum myo_gesture gesture_engine_update(
         uint32_t held_ms =
             engine->flex_last_seen_ms - engine->flex_since_ms;
         engine->flex_tracking = false;
+
+        // Between 3 and 5 seconds: toggle laptop swipe control
+        // on release so that a 5-second hold changes mode only.
+        if (held_ms >= SWIPE_GATE_HOLD_MS) {
+            engine->swipe_enabled = !engine->swipe_enabled;
+            engine->swipe_ready = false;
+            engine->center_tracking = false;
+            engine->swipe_center_valid =
+                engine->swipe_enabled && accel != NULL;
+
+            if (engine->swipe_center_valid) {
+                engine->swipe_center = *accel;
+            }
+
+            engine->select_armed = false;
+            engine->cooldown_until_ms =
+                now_ms + ACTION_COOLDOWN_MS;
+            return MYO_GESTURE_NONE;
+        }
 
         if (held_ms >= FLEX_HOLD_MS &&
             !before_deadline(now_ms, engine->cooldown_until_ms)) {

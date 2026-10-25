@@ -335,15 +335,35 @@ int main(void)
 
                 // Combine orientation, EMG, and IMU into
                 // one actionable gesture.
+                bool swipe_was_enabled =
+                    gesture_control.swipe_enabled;
+                bool swipe_was_ready =
+                    gesture_control.swipe_ready;
+
                 enum myo_gesture action = gesture_engine_update(
                     &gesture_control,
                     gesture_now,
                     valid,
                     prediction_ready,
                     prediction_ready ? predicted_class : EMG_REST,
+                    &accel,
                     significant_motion,
                     pending_swipe
                 );
+
+                if (gesture_control.swipe_enabled !=
+                    swipe_was_enabled) {
+                    // Drop detections captured before the gate toggled.
+                    sensor_stream_clear_swipes();
+                    LOG_INF("Laptop swipe control %s",
+                        gesture_control.swipe_enabled
+                            ? "ENABLED" : "DISABLED");
+                }
+
+                if (!swipe_was_ready &&
+                    gesture_control.swipe_ready) {
+                    LOG_INF("Laptop swipe center ready");
+                }
 
                 // Mode changes are local to the wearable.
                 if (gesture_engine_take_mode_switch(
