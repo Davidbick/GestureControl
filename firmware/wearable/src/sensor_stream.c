@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -40,6 +41,8 @@ static atomic_t read_errors;
 static uint32_t next_sequence;
 static struct swipe_detector swipe_detector;
 static struct orientation_gate gate;
+static struct swipe_stats latest_swipe_stats;
+static atomic_t dropped_swipe_events;
 // Transfer one-shot swipe events from acquisition
 // thread to main thread without losing short events.
 K_MSGQ_DEFINE(
@@ -115,6 +118,7 @@ static void acquisition_thread(
                         &notification,
                         K_NO_WAIT) != 0) {
 
+                    atomic_inc(&dropped_swipe_events);
                     LOG_WRN("Swipe event queue full");
                 }
                 const char *name = "UNKNOWN";
@@ -148,6 +152,7 @@ static void acquisition_thread(
 
             latest_frame = frame;
             latest_valid = true;
+            latest_swipe_stats = swipe_detector.stats;
 
             k_mutex_unlock(&latest_lock);
 
@@ -169,9 +174,14 @@ static void acquisition_thread(
             atomic_inc(&read_errors);
             orientation_invalidate(&gate);
             emg_inference_invalidate();
-            // Never expose a previously valid frame after a read error.
+
+            // Invalidate any unfinished swipe after a sensor error.
+            swipe_reset_motion(&swipe_detector);
+            k_msgq_purge(&swipe_event_queue);
+
             k_mutex_lock(&latest_lock, K_FOREVER);
             latest_valid = false;
+            latest_swipe_stats = swipe_detector.stats;
             k_mutex_unlock(&latest_lock);
         }
 
@@ -262,6 +272,8 @@ int sensor_stream_start(
     // One reference for both receiver modes.
     orientation_set_reference(&gate, reference);
     swipe_init(&swipe_detector);
+    memset(&latest_swipe_stats, 0, sizeof(latest_swipe_stats));
+    atomic_set(&dropped_swipe_events, 0);
 
     atomic_set(&dropped_samples, 0);
     atomic_set(&read_errors, 0);
@@ -314,3 +326,19 @@ void sensor_stream_clear_swipes(void)
     k_msgq_purge(&swipe_event_queue);
 }
 
+
+// Snapshot counters for periodic diagnostics from the main thread.
+void sensor_stream_get_swipe_stats(
+    struct swipe_stats *stats,
+    uint32_t *queue_drops)
+{
+    if (stats != NULL) {
+        k_mutex_lock(&latest_lock, K_FOREVER);
+        *stats = latest_swipe_stats;
+        k_mutex_unlock(&latest_lock);
+    }
+
+    if (queue_drops != NULL) {
+        *queue_drops = (uint32_t)atomic_get(&dropped_swipe_events);
+    }
+}

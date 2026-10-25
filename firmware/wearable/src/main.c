@@ -245,6 +245,7 @@ int main(void)
     int64_t last_log_ms = 0;
     int64_t last_sensor_warning_ms = 0;
     int last_reported_class = -2;
+    uint32_t last_swipe_diag_ms = k_uptime_get_32();
 
     while (1) {
         struct sensor_frame frame = {0};
@@ -314,6 +315,12 @@ int main(void)
                     significant_motion,
                     pending_swipe
                 );
+
+                if (pending_swipe != SWIPE_NONE &&
+                    action == MYO_GESTURE_NONE) {
+                    LOG_INF("Swipe %d suppressed by gesture engine",
+                            (int)pending_swipe);
+                }
 
                 // An outside-gate, five-second TENSE changes receivers.
                 // It is never forwarded as a normal TENSE event.
@@ -428,7 +435,28 @@ int main(void)
             }
         }
                 
-        // Light dimming is now a receiver-side mapped gesture action.
+        // Report pipeline failures without printing every IMU sample.
+        uint32_t diag_now = k_uptime_get_32();
+        if ((uint32_t)(diag_now - last_swipe_diag_ms) >= 3000U) {
+            struct swipe_stats stats = {0};
+            uint32_t queue_drops = 0;
+            sensor_stream_get_swipe_stats(&stats, &queue_drops);
+
+            LOG_INF("SWIPE attempts=%u accepted=%u grace=%u "
+                    "gate_blocked=%u below_threshold=%u",
+                    stats.attempts, stats.accepted, stats.grace_starts,
+                    stats.gate_blocked, stats.below_threshold);
+
+            LOG_INF("SWIPE weak=%u direction=%u ambiguous=%u "
+                    "rearms=%u gaps=%u queue_drops=%u",
+                    stats.weak_capture, stats.direction_rejected,
+                    stats.ambiguous_rejected, stats.rearms, stats.gaps,
+                    queue_drops);
+
+            last_swipe_diag_ms = diag_now;
+        }
+
+        // Light brightness changes only through mapped gesture events.
         k_msleep(SAMPLE_INTERVAL_MS);
     }
 

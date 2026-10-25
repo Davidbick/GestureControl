@@ -44,4 +44,9 @@ bool sensor_stream_pop_swipe(
 // during startup calibration.
 void sensor_stream_clear_swipes(void);
 
+// Counters since sensor_stream_start(), including event queue overflows.
+void sensor_stream_get_swipe_stats(
+    struct swipe_stats *stats,
+    uint32_t *queue_drops);
+
 #endif
