@@ -216,6 +216,7 @@ int main(void)
     }
 
     uint32_t last_brightness_sequence = UINT32_MAX;
+    bool brightness_adjusting = false;
     // Ignore gesture events collected during calibration.
     sensor_stream_clear_swipes();
 
@@ -257,12 +258,21 @@ int main(void)
             bool prediction_ready =
                 emg_inference_latest(&predicted_class);
 
-            // Only adjust brightness during intentional
-            // EXTEND gestures in a valid orientation.
+            // Continue dimming through FLEX after EXTEND.
+            // REST or invalid orientation holds brightness.
+            if (!valid ||
+                !prediction_ready ||
+                predicted_class == EMG_REST) {
+
+                brightness_adjusting = false;
+
+            } else if (predicted_class == EMG_EXTEND) {
+
+                brightness_adjusting = true;
+            }
+
             bool adjusting_brightness =
-                valid &&
-                prediction_ready &&
-                predicted_class == EMG_EXTEND;
+                valid && brightness_adjusting;
 
             if (brightness_ready &&
                 frame.sequence != last_brightness_sequence) {
@@ -414,6 +424,8 @@ int main(void)
             }
         } else {
             LOG_ERR("Accelerometer read failed: %d", ret);
+
+            brightness_adjusting = false;
 
             // Reset gate after a failed reading
             orientation.valid = false;
