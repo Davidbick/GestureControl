@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 
@@ -21,14 +22,36 @@ LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
 
 #define LED_NODE DT_ALIAS(led0)
 #define RX_TIMEOUT_MS 1500U
-#define RGB_LED_PIN 29
 #define TENSE_GUARD_MS 250U
-
-static const struct device *rgb_gpio =
-    DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED_NODE, gpios);
+
+    
+// Hardware PWM output on P0.29.
+#define RED_PWM_NODE DT_NODELABEL(red_pwm)
+
+static const struct pwm_dt_spec red_pwm =
+    PWM_DT_SPEC_GET(RED_PWM_NODE);
+
+// Set physical red LED brightness.
+// PWM_POLARITY_INVERTED is configured in app.overlay.
+static int set_red_brightness(uint8_t percent)
+{
+    if (percent > 100U) {
+        percent = 100U;
+    }
+
+    uint32_t pulse_ns =
+        (uint32_t)(((uint64_t)red_pwm.period *
+                    percent) / 100U);
+
+    return pwm_set_dt(
+        &red_pwm,
+        red_pwm.period,
+        pulse_ns
+    );
+}
 
 // Shared BLE connection state.
 static atomic_t link_up;
@@ -38,6 +61,9 @@ static atomic_t session_epoch;
 
 // Actual light state, independent of orientation.
 static atomic_t light_on;
+static atomic_t brightness_pct = ATOMIC_INIT(50);
+static atomic_t brightness_seq_seen;
+static atomic_t last_brightness_seq;
 
 // Queue BLE packets for the main thread.
 struct queued_gesture {
@@ -169,7 +195,62 @@ static ssize_t write_gesture(
     return len;
 }
 
-// Both existing state and new gesture characteristics.
+// Receive and store brightness.
+static ssize_t write_brightness(
+    struct bt_conn *conn,
+    const struct bt_gatt_attr *attr,
+    const void *buf,
+    uint16_t len,
+    uint16_t offset,
+    uint8_t flags)
+{
+    ARG_UNUSED(conn);
+    ARG_UNUSED(attr);
+
+    if (offset != 0 ||
+        len != sizeof(struct myo_brightness_packet)) {
+        return BT_GATT_ERR(
+            BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+    }
+
+    if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+        return 0;
+    }
+
+    struct myo_brightness_packet packet;
+
+    memcpy(&packet, buf, sizeof(packet));
+
+    if (!myo_brightness_valid(packet.percent)) {
+        LOG_WRN("Invalid brightness: %u",
+                packet.percent);
+
+        return BT_GATT_ERR(
+            BT_ATT_ERR_VALUE_NOT_ALLOWED);
+    }
+
+    // Ignore duplicate brightness packets.
+    if (atomic_get(&brightness_seq_seen) &&
+        packet.sequence ==
+            (uint8_t)atomic_get(&last_brightness_seq)) {
+
+        LOG_DBG("Duplicate brightness seq=%u",
+                packet.sequence);
+        return len;
+    }
+
+    atomic_set(&last_brightness_seq, packet.sequence);
+    atomic_set(&brightness_seq_seen, 1);
+    atomic_set(&brightness_pct, packet.percent);
+
+    LOG_INF("BLE RX: BRIGHTNESS=%u%% seq=%u",
+            packet.percent,
+            packet.sequence);
+
+    return len;
+}
+
+
 BT_GATT_SERVICE_DEFINE(myo_service,
     BT_GATT_PRIMARY_SERVICE(
         BT_UUID_DECLARE_128(MYO_SERVICE_UUID_BYTES)),
@@ -190,8 +271,18 @@ BT_GATT_SERVICE_DEFINE(myo_service,
         BT_GATT_PERM_WRITE,
         NULL,
         write_gesture,
+        NULL),
+
+    BT_GATT_CHARACTERISTIC(
+        BT_UUID_DECLARE_128(MYO_BRIGHTNESS_UUID_BYTES),
+        BT_GATT_CHRC_WRITE |
+        BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+        BT_GATT_PERM_WRITE,
+        NULL,
+        write_brightness,
         NULL)
 );
+
 
 // Existing BLE advertising.
 static const struct bt_data ad[] = {
@@ -239,6 +330,11 @@ static void connected(
 
     atomic_set(&light_on, 0);
     atomic_set(&rx_valid, 0);
+
+    // Default to 50% until a brightness packet arrives.
+    atomic_set(&brightness_pct, 50);
+    atomic_set(&brightness_seq_seen, 0);
+    atomic_set(&last_brightness_seq, 0);
     atomic_set(&link_up, 1);
 
     LOG_INF("Wearable connected");
@@ -253,6 +349,8 @@ static void disconnected(
     atomic_set(&link_up, 0);
     atomic_set(&rx_valid, 0);
     atomic_set(&light_on, 0);
+    atomic_set(&brightness_pct, 50);
+    atomic_set(&brightness_seq_seen, 0);
 
     // Invalidate packets from previous connection.
     atomic_inc(&session_epoch);
@@ -346,20 +444,23 @@ int main(void)
     gpio_pin_configure_dt(
         &led, GPIO_OUTPUT_INACTIVE);
 
-    if (!device_is_ready(rgb_gpio)) {
-        LOG_ERR("RGB GPIO not ready");
+        
+    if (!pwm_is_ready_dt(&red_pwm)) {
+        LOG_ERR("Red LED PWM not ready");
         return 0;
     }
 
-    // Active LOW: HIGH = OFF, LOW = ON.
-    int rgb_err = gpio_pin_configure(
-        rgb_gpio, RGB_LED_PIN, GPIO_OUTPUT_HIGH);
+    // Start with external LED fully OFF.
+    int pwm_err = set_red_brightness(0);
 
-    if (rgb_err) {
-        LOG_ERR("RGB GPIO configuration failed: %d",
-                rgb_err);
+    if (pwm_err) {
+        LOG_ERR("Initial PWM setup failed: %d",
+                pwm_err);
         return 0;
     }
+
+    LOG_INF("Red LED PWM ready on P0.29");
+
 
     LOG_INF("GestureControl receiver starting");
 
@@ -385,6 +486,7 @@ int main(void)
     bool previous_valid = false;
     bool previous_fresh = false;
     bool previous_output = false;
+    int previous_pwm_percent = -1;
 
     while (1) {
         // Process all pending gesture commands.
@@ -415,11 +517,35 @@ int main(void)
 
         gpio_pin_set_dt(&led, output_on ? 1 : 0);
 
-        // External RGB LED, active LOW.
-        gpio_pin_set(
-            rgb_gpio,
-            RGB_LED_PIN,
-            output_on ? 0 : 1);
+                
+        // Physical brightness:
+        // OFF = 0%
+        // ON = most recently received brightness.
+        uint8_t requested_percent =
+            output_on
+                ? (uint8_t)atomic_get(&brightness_pct)
+                : 0U;
+
+        // Defensive clamp.
+        if (requested_percent > 100U) {
+            requested_percent = 100U;
+        }
+
+        // Update PWM only when brightness changes.
+        if ((int)requested_percent != previous_pwm_percent) {
+
+            int ret = set_red_brightness(requested_percent);
+
+            if (ret) {
+                LOG_ERR("PWM update failed: %d", ret);
+            } else {
+                previous_pwm_percent = requested_percent;
+
+                LOG_INF("Red LED PWM: %u%%",
+                        requested_percent);
+            }
+        }
+
 
         // Redraw OLED only when visible data changes.
         if (!oled_err &&

@@ -229,6 +229,9 @@ int main(void)
     int64_t last_tx_ms = 0;
     int64_t last_log_ms = 0;
     int last_reported_class = -2;
+    // Brightness transmission state.
+    uint8_t last_brightness_sent = 0xff;
+    bool brightness_was_ready = false;
 
     while (1) {
         struct sensor_frame frame = {0};
@@ -247,8 +250,20 @@ int main(void)
                     &orientation,
                     &accel);
                         
-            // Update brightness only when a fresh sensor
-            // frame is available and calibration succeeded.
+            
+            // Read the latest EMG ML prediction.
+            emg_class_t predicted_class = EMG_REST;
+
+            bool prediction_ready =
+                emg_inference_latest(&predicted_class);
+
+            // Only adjust brightness during intentional
+            // EXTEND gestures in a valid orientation.
+            bool adjusting_brightness =
+                valid &&
+                prediction_ready &&
+                predicted_class == EMG_EXTEND;
+
             if (brightness_ready &&
                 frame.sequence != last_brightness_sequence) {
 
@@ -256,11 +271,12 @@ int main(void)
                     &brightness,
                     frame.emg.mv[0],
                     frame.timestamp_ms,
-                    valid
+                    adjusting_brightness
                 );
 
                 last_brightness_sequence = frame.sequence;
             }
+
 
             
             int angle =
@@ -268,10 +284,6 @@ int main(void)
                     &orientation,
                     &accel);
 
-            // Retrieve the most recent ML prediction.
-            emg_class_t predicted_class;
-            bool prediction_ready =
-                emg_inference_latest(&predicted_class);
             
             // Run command recognition only for fresh sensor data.
             uint32_t gesture_now = k_uptime_get_32();
@@ -418,7 +430,41 @@ int main(void)
                 last_sent = state;
                 last_tx_ms = now;
             }
-        }        
+        }
+                
+        // Transmit brightness only on a change or when
+        // the brightness characteristic becomes ready.
+        bool brightness_link_ready =
+            myo_ble_client_brightness_ready();
+
+        // Use a safe default if EMG calibration failed.
+        uint8_t current_brightness =
+            brightness_ready
+                ? brightness_get(&brightness)
+                : 50U;
+
+        if (brightness_link_ready &&
+            (!brightness_was_ready ||
+            current_brightness != last_brightness_sent)) {
+
+            int brightness_err =
+                myo_ble_client_send_brightness(
+                    current_brightness
+                );
+
+            if (brightness_err == 0) {
+                last_brightness_sent = current_brightness;
+
+                LOG_INF("BLE TX: BRIGHTNESS=%u%%",
+                        current_brightness);
+            } else {
+                LOG_WRN("Brightness TX failed: %d",
+                        brightness_err);
+            }
+        }
+
+        brightness_was_ready = brightness_link_ready;
+        
 
         k_msleep(SAMPLE_INTERVAL_MS);
     }

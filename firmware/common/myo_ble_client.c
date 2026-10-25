@@ -17,6 +17,7 @@ static struct bt_conn *peer_conn;
 
 static uint16_t state_handle;
 static uint16_t gesture_handle;
+static uint16_t brightness_handle;
 static uint8_t next_sequence;
 
 K_MUTEX_DEFINE(ble_lock);
@@ -26,6 +27,9 @@ static struct bt_uuid_128 state_uuid =
 
 static struct bt_uuid_128 gesture_uuid =
     BT_UUID_INIT_128(MYO_GESTURE_UUID_BYTES);
+
+static struct bt_uuid_128 brightness_uuid =
+    BT_UUID_INIT_128(MYO_BRIGHTNESS_UUID_BYTES);
 
 static struct bt_gatt_discover_params discover_params;
 
@@ -43,14 +47,16 @@ static uint8_t discover_func(
     if (!attr) {
         uint16_t state;
         uint16_t gesture;
+        uint16_t brightness;
 
         k_mutex_lock(&ble_lock, K_FOREVER);
         state = state_handle;
         gesture = gesture_handle;
+        brightness = brightness_handle;
         k_mutex_unlock(&ble_lock);
 
-        LOG_INF("GATT complete: state=%u gesture=%u",
-                state, gesture);
+        LOG_INF("GATT complete: state=%u gesture=%u brightness=%u",
+        state, gesture, brightness);
 
         if (state == 0 && gesture == 0) {
             LOG_WRN("No GestureControl characteristics");
@@ -78,9 +84,15 @@ static uint8_t discover_func(
 
     if (bt_uuid_cmp(chrc->uuid, &gesture_uuid.uuid) == 0) {
         gesture_handle = chrc->value_handle;
-
         LOG_INF("Gesture handle=%u", gesture_handle);
     }
+
+    
+    if (bt_uuid_cmp(chrc->uuid, &brightness_uuid.uuid) == 0) {
+        brightness_handle = chrc->value_handle;
+        LOG_INF("Brightness handle=%u", brightness_handle);
+    }
+
 
     k_mutex_unlock(&ble_lock);
 
@@ -205,6 +217,7 @@ static void connected(
 
         state_handle = 0;
         gesture_handle = 0;
+        brightness_handle = 0;
 
         k_mutex_unlock(&ble_lock);
 
@@ -218,6 +231,7 @@ static void connected(
 
     state_handle = 0;
     gesture_handle = 0;
+    brightness_handle = 0;
     next_sequence = 0;
 
     k_mutex_unlock(&ble_lock);
@@ -254,6 +268,7 @@ static void disconnected(
 
     state_handle = 0;
     gesture_handle = 0;
+    brightness_handle = 0;
 
     if (peer_conn == conn) {
         bt_conn_unref(peer_conn);
@@ -287,9 +302,14 @@ int myo_ble_client_init(void)
     return 0;
 }
 
-// Connection lookup helper
+enum myo_write_target {
+    MYO_WRITE_STATE,
+    MYO_WRITE_GESTURE,
+    MYO_WRITE_BRIGHTNESS
+};
+
 static int get_write_target(
-    bool gesture,
+    enum myo_write_target target,
     struct bt_conn **conn,
     uint16_t *handle)
 {
@@ -301,15 +321,28 @@ static int get_write_target(
     k_mutex_lock(&ble_lock, K_FOREVER);
 
     if (peer_conn != NULL) {
-        uint16_t selected =
-            gesture ? gesture_handle : state_handle;
+        uint16_t selected = 0;
+
+        switch (target) {
+        case MYO_WRITE_STATE:
+            selected = state_handle;
+            break;
+
+        case MYO_WRITE_GESTURE:
+            selected = gesture_handle;
+            break;
+
+        case MYO_WRITE_BRIGHTNESS:
+            selected = brightness_handle;
+            break;
+        }
 
         if (selected != 0) {
             *conn = bt_conn_ref(peer_conn);
             *handle = selected;
             ret = 0;
         } else {
-            ret = gesture ? -ENOTSUP : -ENOTCONN;
+            ret = -ENOTSUP;
         }
     }
 
@@ -318,6 +351,7 @@ static int get_write_target(
     return ret;
 }
 
+
 // Legacy validity transmission
 int myo_ble_client_send_state(uint8_t state)
 {
@@ -325,7 +359,7 @@ int myo_ble_client_send_state(uint8_t state)
     uint16_t handle;
 
     int err = get_write_target(
-        false, &conn, &handle);
+        MYO_WRITE_STATE, &conn, &handle);
 
     if (err) {
         return err;
@@ -354,7 +388,7 @@ int myo_ble_client_send_gesture(enum myo_gesture gesture)
     uint16_t handle;
 
     int err = get_write_target(
-        true, &conn, &handle);
+        MYO_WRITE_GESTURE, &conn, &handle);
 
     if (err) {
         return err;
@@ -386,6 +420,60 @@ bool myo_ble_client_gesture_ready(void)
 
     bool ready =
         peer_conn != NULL && gesture_handle != 0;
+
+    k_mutex_unlock(&ble_lock);
+
+    return ready;
+}
+
+int myo_ble_client_send_brightness(uint8_t percent)
+{
+    if (!myo_brightness_valid(percent)) {
+        return -EINVAL;
+    }
+
+    struct bt_conn *conn;
+    uint16_t handle;
+
+    int err = get_write_target(
+        MYO_WRITE_BRIGHTNESS,
+        &conn,
+        &handle
+    );
+
+    if (err) {
+        return err;
+    }
+
+    struct myo_brightness_packet packet;
+
+    packet.percent = percent;
+
+    // Shared counter with gesture packets.
+    k_mutex_lock(&ble_lock, K_FOREVER);
+    packet.sequence = next_sequence++;
+    k_mutex_unlock(&ble_lock);
+
+    int ret = bt_gatt_write_without_response(
+        conn,
+        handle,
+        &packet,
+        sizeof(packet),
+        false
+    );
+
+    bt_conn_unref(conn);
+
+    return ret;
+}
+
+bool myo_ble_client_brightness_ready(void)
+{
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    bool ready =
+        peer_conn != NULL &&
+        brightness_handle != 0;
 
     k_mutex_unlock(&ble_lock);
 

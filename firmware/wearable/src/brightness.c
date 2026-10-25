@@ -25,7 +25,13 @@ void brightness_init(struct brightness_estimator *b,
 
     b->baseline_mv = baseline_mv;
     b->maximum_mv = maximum_mv;
-    b->filtered_mv = baseline_mv;
+        
+    // Start at a usable 50% brightness.
+    b->filtered_mv =
+        baseline_mv + 0.5f * (maximum_mv - baseline_mv);
+
+    b->level = 2;
+    b->candidate = 2;
     b->initialized = true;
 }
 

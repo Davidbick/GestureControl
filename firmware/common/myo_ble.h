@@ -19,6 +19,10 @@
     BT_UUID_128_ENCODE(0x89ca2ebf, 0x7c18, 0x4a33, \
                        0x9877, 0xdf55001abce0)
 
+#define MYO_BRIGHTNESS_UUID_BYTES \
+    BT_UUID_128_ENCODE(0x89ca2ebf, 0x7c18, 0x4a33, \
+                       0x9877, 0xdf55001abce1)
+
 // Temporary classification values
 #define MYO_INVALID 0
 #define MYO_VALID   1
@@ -38,6 +42,18 @@ struct myo_gesture_packet {
     uint8_t gesture;
     uint8_t sequence;
 };
+
+// Two-byte brightness packet.
+struct myo_brightness_packet {
+    uint8_t percent;
+    uint8_t sequence;
+};
+
+static inline bool myo_brightness_valid(uint8_t percent)
+{
+    return percent <= 100U && (percent % 25U) == 0U;
+}
+
 
 static inline bool myo_gesture_valid(uint8_t gesture)
 {

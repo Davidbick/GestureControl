@@ -18,4 +18,11 @@ int myo_ble_client_send_gesture(enum myo_gesture gesture);
 // True once the new gesture characteristic is found.
 bool myo_ble_client_gesture_ready(void);
 
+// Send quantized brightness, 0 to 100 percent.
+int myo_ble_client_send_brightness(uint8_t percent);
+
+// True when the receiver's brightness
+// characteristic has been discovered.
+bool myo_ble_client_brightness_ready(void);
+
 #endif
