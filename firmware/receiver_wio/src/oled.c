@@ -56,9 +56,10 @@ int oled_init(void)
     return -ENOTSUP;
 }
 
-int oled_show(bool connected, bool valid, bool fresh)
+
+int oled_show(bool connected, bool valid,
+              bool fresh, bool output_on)
 {
-    bool output_on = connected && valid && fresh;
 
     const char *ble_text =
         connected ? "BLE: CONNECT" : "BLE: WAIT";

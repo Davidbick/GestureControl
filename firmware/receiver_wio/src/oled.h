@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 int oled_init(void);
-int oled_show(bool connected, bool valid, bool fresh);
+int oled_show(bool connected, bool valid,
+              bool fresh, bool output_on);
 
 #endif
