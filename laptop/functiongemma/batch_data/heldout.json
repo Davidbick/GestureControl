@@ -1,0 +1,151 @@
+[
+  {
+    "prompt": "Set swipe up to press W on the computer.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "KEY_TAP",
+            "key": "W"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "I'm playing Minecraft. Make swipe up toggle W, swipe left press A, and tense press Space on the computer.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "KEY_TOGGLE",
+            "key": "W"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "KEY_TAP",
+            "key": "A"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "KEY_TAP",
+            "key": "SPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Make tense toggle the light.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_TOGGLE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "On my light, flex should switch it off and extend should switch it on.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_ON"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "For the computer, swipe right should tap Q with CTRL and SHIFT for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TAP",
+            "key": "Q",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ],
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set light brightness to 75 percent when I swipe down.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 75
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "On the computer, swipe left moves the mouse left by 25 and swipe up scrolls up by 2.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Disable the flex action on the computer.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  }
+]

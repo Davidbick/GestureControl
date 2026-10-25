@@ -1,0 +1,2357 @@
+[
+  {
+    "prompt": "Configure on the light: extend to light toggle.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_TOGGLE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe right to mouse scroll down amount 2.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: extend to mouse right click; swipe right to mouse middle click; flex to mouse double click; swipe down to mouse move up amount 80; tense to mouse move down amount 25; swipe up to mouse move left amount 40; swipe left to mouse move right amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_RIGHT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 80
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 40
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: tense to mouse move right amount 40; swipe down to mouse scroll up amount 1.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 40
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: extend to mouse right click for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_RIGHT_CLICK",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: swipe down to light on; swipe left to light off; swipe up to light set brightness amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: extend to none; tense to press W; swipe down to toggle holding Q; swipe up to mouse left click; swipe left to mouse right click; flex to mouse middle click; swipe right to mouse double click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "NONE"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "KEY_TAP",
+            "key": "W"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "KEY_TOGGLE",
+            "key": "Q"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_LEFT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_RIGHT_CLICK"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_DOUBLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: extend to light on; swipe right to light off; tense to light set brightness amount 10; flex to light brightness up amount 75; swipe down to light brightness down amount 100; swipe left to none; swipe up to light toggle.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 10
+          },
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 75
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 100
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_TOGGLE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: swipe right to mouse move left amount 10; tense to mouse move right amount 80; flex to mouse scroll up amount 5; swipe left to mouse scroll down amount 5; swipe up to none; extend to press ENTER; swipe down to toggle holding ENTER.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 10
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 80
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 5
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 5
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "NONE"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "KEY_TAP",
+            "key": "ENTER"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "KEY_TOGGLE",
+            "key": "ENTER"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: swipe right to mouse left click; swipe down to mouse right click; swipe up to mouse middle click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_LEFT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_RIGHT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_MIDDLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe up to mouse double click; tense to mouse move up amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe down to press Q; flex to toggle holding SPACE.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "KEY_TAP",
+            "key": "Q"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "KEY_TOGGLE",
+            "key": "SPACE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: tense to mouse middle click for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MIDDLE_CLICK",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe up to toggle holding F1; swipe right to mouse left click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "KEY_TOGGLE",
+            "key": "F1"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_LEFT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: swipe right to light toggle; tense to light on.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_ON"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe right to light brightness down amount 50; extend to none; flex to light toggle; swipe up to light on; tense to light off; swipe down to light set brightness amount 50; swipe left to light brightness up amount 50.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 50
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "NONE"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 50
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 50
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: tense to mouse middle click; extend to mouse double click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_DOUBLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: swipe up to light off.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_OFF"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe up to press F1.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "KEY_TAP",
+            "key": "F1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: swipe right to light toggle; swipe down to light on; extend to light off.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_OFF"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe up to toggle holding A; swipe down to mouse left click; flex to mouse right click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "KEY_TOGGLE",
+            "key": "A"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_LEFT_CLICK"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_RIGHT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: extend to light on; swipe right to light off; swipe up to light set brightness amount 10; tense to light brightness up amount 50.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 10
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 50
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: tense to light off; swipe left to light set brightness amount 100.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: swipe right to none; swipe up to light toggle.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_TOGGLE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe left to none; swipe right to press D.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TAP",
+            "key": "D"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe down to mouse move down amount 10; swipe right to mouse move left amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe left to light toggle; swipe down to light on; tense to light off.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_OFF"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe up to mouse scroll up amount 2; extend to mouse scroll down amount 5; swipe left to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 2
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 5
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: flex to mouse move right amount 25.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 25
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: flex to light brightness up amount 50; swipe left to light brightness down amount 25; swipe right to none; swipe down to light toggle.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 50
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_TOGGLE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: swipe left to light toggle; swipe up to light on; tense to light off; swipe right to light set brightness amount 50.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 50
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe down to mouse right click; swipe up to mouse middle click; flex to mouse double click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_RIGHT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_DOUBLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: swipe down to light brightness up amount 50; flex to light brightness down amount 25.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 50
+          },
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 25
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: swipe up to light set brightness amount 25.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 25
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: extend to mouse scroll up amount 5; flex to mouse scroll down amount 2; swipe left to none; tense to press SPACE; swipe right to toggle holding TAB; swipe up to mouse left click; swipe down to mouse right click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 5
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "KEY_TAP",
+            "key": "SPACE"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TOGGLE",
+            "key": "TAB"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_LEFT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_RIGHT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: swipe right to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe right to light off; flex to light set brightness amount 25; swipe up to light brightness up amount 25; swipe down to light brightness down amount 50; swipe left to none; tense to light toggle; extend to light on.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 50
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_ON"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe right to mouse scroll down amount 2; swipe up to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: extend to mouse middle click; swipe down to mouse double click; swipe right to mouse move up amount 40.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 40
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: swipe left to press A; swipe down to toggle holding SPACE; extend to mouse left click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "KEY_TAP",
+            "key": "A"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "KEY_TOGGLE",
+            "key": "SPACE"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_LEFT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe left to press A for 100 milliseconds; swipe right to toggle holding F1.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "KEY_TAP",
+            "key": "A",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TOGGLE",
+            "key": "F1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe down to mouse scroll down amount 1; extend to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 1
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: swipe down to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: swipe down to light set brightness amount 50.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 50
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: swipe down to light off; swipe left to light set brightness amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: tense to mouse right click for 100 milliseconds; swipe right to mouse middle click for 100 milliseconds; extend to mouse double click for 100 milliseconds; swipe left to mouse move up amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_RIGHT_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MIDDLE_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_DOUBLE_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe right to mouse scroll up amount 1; swipe left to mouse scroll down amount 5.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 1
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 5
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: extend to mouse move down amount 25; tense to mouse move left amount 80; swipe right to mouse move right amount 40; flex to mouse scroll up amount 5.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 25
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 80
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 40
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 5
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: extend to mouse move right amount 10; tense to mouse scroll up amount 2; flex to mouse scroll down amount 5; swipe up to none; swipe down to press SPACE; swipe left to toggle holding TAB; swipe right to mouse left click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 10
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 2
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 5
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "KEY_TAP",
+            "key": "SPACE"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "KEY_TOGGLE",
+            "key": "TAB"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_LEFT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe left to mouse move left amount 25; extend to mouse move right amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 25
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: swipe up to mouse double click for 100 milliseconds; swipe right to mouse move up amount 10; tense to mouse move down amount 40; swipe down to mouse move left amount 40.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_DOUBLE_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 10
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 40
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 40
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: extend to mouse left click; tense to mouse right click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_LEFT_CLICK"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_RIGHT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: flex to mouse move up amount 25.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 25
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: extend to mouse scroll down amount 2; swipe left to none; swipe right to press A for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TAP",
+            "key": "A",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: flex to light brightness down amount 50.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 50
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: tense to none; extend to press Q for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "NONE"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "KEY_TAP",
+            "key": "Q",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: tense to toggle holding F1; swipe right to mouse left click; swipe up to mouse right click; extend to mouse middle click; flex to mouse double click; swipe down to mouse move up amount 80; swipe left to mouse move down amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "KEY_TOGGLE",
+            "key": "F1"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_LEFT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_RIGHT_CLICK"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 80
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: flex to mouse double click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_DOUBLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe left to mouse move left amount 80; swipe down to mouse move right amount 10; tense to mouse scroll up amount 5.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 80
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 10
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 5
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: flex to light brightness up amount 10; swipe left to light brightness down amount 10; swipe right to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe up to light set brightness amount 100; swipe left to light brightness up amount 75; swipe right to light brightness down amount 100.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 100
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 75
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: extend to mouse move down amount 40.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 40
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: swipe right to light off.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_OFF"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: swipe down to light on; extend to light off.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_OFF"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe right to mouse right click; swipe left to mouse middle click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_RIGHT_CLICK"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MIDDLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: swipe left to mouse left click for 100 milliseconds; extend to mouse right click for 100 milliseconds; tense to mouse middle click for 100 milliseconds; flex to mouse double click for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_LEFT_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_RIGHT_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MIDDLE_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_DOUBLE_CLICK",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: extend to light brightness down amount 10; swipe right to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: extend to mouse scroll down amount 1; swipe down to none; flex to press Q with CTRL and SHIFT; swipe right to toggle holding S with CTRL and SHIFT.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 1
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "NONE"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "KEY_TAP",
+            "key": "Q",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ]
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TOGGLE",
+            "key": "S",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: swipe left to mouse move left amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: tense to mouse middle click for 100 milliseconds; swipe left to mouse double click for 100 milliseconds; extend to mouse move up amount 25; swipe down to mouse move down amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MIDDLE_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_DOUBLE_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe left to mouse move up amount 25; swipe down to mouse move down amount 25; swipe right to mouse move left amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 25
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: flex to mouse move down amount 80; extend to mouse move left amount 40; tense to mouse move right amount 80; swipe down to mouse scroll up amount 1; swipe left to mouse scroll down amount 1; swipe right to none; swipe up to press W.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 80
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 40
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 80
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 1
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 1
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "KEY_TAP",
+            "key": "W"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: extend to mouse double click; swipe down to mouse move up amount 40; tense to mouse move down amount 10; swipe left to mouse move left amount 40; flex to mouse move right amount 10; swipe right to mouse scroll up amount 5; swipe up to mouse scroll down amount 2.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 40
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 40
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 5
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe down to mouse move up amount 25.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 25
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: flex to mouse move up amount 25; tense to mouse move down amount 10; swipe up to mouse move left amount 80.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 25
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 80
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: flex to mouse left click for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_LEFT_CLICK",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: swipe right to mouse scroll up amount 2.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: flex to mouse scroll up amount 2; swipe right to mouse scroll down amount 2; tense to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 2
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          },
+          {
+            "gesture": "TENSE",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: flex to mouse middle click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_MIDDLE_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe down to none; tense to light toggle; swipe left to light on.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "NONE"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_ON"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe up to mouse move down amount 10; extend to mouse move left amount 80; tense to mouse move right amount 40.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 80
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 40
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe right to light brightness up amount 50; swipe up to light brightness down amount 75; swipe left to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 50
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 75
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the light: swipe right to light set brightness amount 50; flex to light brightness up amount 75.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 50
+          },
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 75
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the light: tense to light set brightness amount 50; extend to light brightness up amount 10; swipe up to light brightness down amount 100.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 50
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: swipe right to toggle holding W with CTRL and SHIFT; tense to mouse left click for 100 milliseconds; swipe up to mouse right click for 100 milliseconds; swipe down to mouse middle click for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TOGGLE",
+            "key": "W",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ]
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_LEFT_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_RIGHT_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MIDDLE_CLICK",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: swipe right to none.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "NONE"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe left to mouse double click; extend to mouse move up amount 25; tense to mouse move down amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 25
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_MOVE_DOWN",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: tense to toggle holding S with CTRL and SHIFT.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "TENSE",
+            "action": "KEY_TOGGLE",
+            "key": "S",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Please assign on the computer: swipe up to mouse left click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_LEFT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the computer: flex to press E with CTRL and SHIFT; extend to toggle holding W with CTRL and SHIFT; swipe up to mouse left click for 100 milliseconds; swipe right to mouse right click for 100 milliseconds.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "FLEX",
+            "action": "KEY_TAP",
+            "key": "E",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ]
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "KEY_TOGGLE",
+            "key": "W",
+            "modifiers": [
+              "CTRL",
+              "SHIFT"
+            ]
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_LEFT_CLICK",
+            "duration_ms": 100
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_RIGHT_CLICK",
+            "duration_ms": 100
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: swipe down to mouse middle click; flex to mouse double click; swipe up to mouse move up amount 10.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "MOUSE_MIDDLE_CLICK"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_DOUBLE_CLICK"
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "MOUSE_MOVE_UP",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: swipe left to mouse move left amount 80; swipe right to mouse move right amount 10; flex to mouse scroll up amount 2.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_MOVE_LEFT",
+            "amount": 80
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 10
+          },
+          {
+            "gesture": "FLEX",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Set on the computer: swipe right to toggle holding E; tense to mouse left click.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "KEY_TOGGLE",
+            "key": "E"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_LEFT_CLICK"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Configure on the light: swipe down to light brightness down amount 10; swipe up to none; swipe left to light toggle; swipe right to light on.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_ON"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the computer: swipe right to mouse move right amount 40; tense to mouse scroll up amount 1; swipe left to mouse scroll down amount 2.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "COMPUTER",
+        "mappings": [
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "MOUSE_MOVE_RIGHT",
+            "amount": 40
+          },
+          {
+            "gesture": "TENSE",
+            "action": "MOUSE_SCROLL_UP",
+            "amount": 1
+          },
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "MOUSE_SCROLL_DOWN",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "prompt": "Map on the light: swipe left to none; swipe right to light toggle; flex to light on; extend to light off; tense to light set brightness amount 75; swipe down to light brightness up amount 10; swipe up to light brightness down amount 100.",
+    "call": {
+      "name": "configure_gesture_batch",
+      "arguments": {
+        "target": "LIGHT",
+        "mappings": [
+          {
+            "gesture": "SWIPE_LEFT",
+            "action": "NONE"
+          },
+          {
+            "gesture": "SWIPE_RIGHT",
+            "action": "LIGHT_TOGGLE"
+          },
+          {
+            "gesture": "FLEX",
+            "action": "LIGHT_ON"
+          },
+          {
+            "gesture": "EXTEND",
+            "action": "LIGHT_OFF"
+          },
+          {
+            "gesture": "TENSE",
+            "action": "LIGHT_SET_BRIGHTNESS",
+            "amount": 75
+          },
+          {
+            "gesture": "SWIPE_DOWN",
+            "action": "LIGHT_BRIGHTNESS_UP",
+            "amount": 10
+          },
+          {
+            "gesture": "SWIPE_UP",
+            "action": "LIGHT_BRIGHTNESS_DOWN",
+            "amount": 100
+          }
+        ]
+      }
+    }
+  }
+]

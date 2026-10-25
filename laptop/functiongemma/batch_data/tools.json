@@ -1,0 +1,109 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "configure_gesture_batch",
+      "description": "Configure 1 to 7 unique gestures on one target receiver. Use when assigning multiple gesture controls; changes are checked individually and are not atomic.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "COMPUTER",
+              "LIGHT"
+            ]
+          },
+          "mappings": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 7,
+            "description": "One to seven different gestures and their desired actions.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gesture": {
+                  "type": "string",
+                  "enum": [
+                    "SWIPE_UP",
+                    "SWIPE_DOWN",
+                    "SWIPE_LEFT",
+                    "SWIPE_RIGHT",
+                    "TENSE",
+                    "EXTEND",
+                    "FLEX"
+                  ],
+                  "description": "EXTEND means EMG0-dominant flex, FLEX means EMG1-dominant flex, and TENSE means full-arm tense. SWIPE_* are directional swipes."
+                },
+                "action": {
+                  "type": "string",
+                  "enum": [
+                    "NONE",
+                    "KEY_TAP",
+                    "KEY_TOGGLE",
+                    "MOUSE_LEFT_CLICK",
+                    "MOUSE_RIGHT_CLICK",
+                    "MOUSE_MIDDLE_CLICK",
+                    "MOUSE_DOUBLE_CLICK",
+                    "MOUSE_MOVE_UP",
+                    "MOUSE_MOVE_DOWN",
+                    "MOUSE_MOVE_LEFT",
+                    "MOUSE_MOVE_RIGHT",
+                    "MOUSE_SCROLL_UP",
+                    "MOUSE_SCROLL_DOWN",
+                    "LIGHT_TOGGLE",
+                    "LIGHT_ON",
+                    "LIGHT_OFF",
+                    "LIGHT_SET_BRIGHTNESS",
+                    "LIGHT_BRIGHTNESS_UP",
+                    "LIGHT_BRIGHTNESS_DOWN"
+                  ]
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Keyboard key for KEY_TAP or KEY_TOGGLE: letter A-Z, digit 0-9, ENTER, SPACE, TAB, ESCAPE, BACKSPACE, DELETE, HOME, END, PAGE_UP, PAGE_DOWN, arrow keys, F1-F12."
+                },
+                "modifiers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "CTRL",
+                      "SHIFT",
+                      "ALT",
+                      "GUI"
+                    ]
+                  },
+                  "uniqueItems": true,
+                  "description": "Optional keyboard modifiers for KEY_TAP or KEY_TOGGLE."
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 127,
+                  "description": "Relative mouse movement, wheel steps, or light brightness percentage. Required for LIGHT_SET_BRIGHTNESS."
+                },
+                "duration_ms": {
+                  "type": "integer",
+                  "minimum": 30,
+                  "maximum": 2000,
+                  "description": "Press duration for KEY_TAP or mouse click. Defaults to 35 ms."
+                }
+              },
+              "required": [
+                "gesture",
+                "action"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "target",
+          "mappings"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+]
