@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(myo_ble_client, LOG_LEVEL_INF);
 
 static struct bt_conn *peer_conn;
+static enum myo_receiver_mode current_mode = MYO_MODE_LIGHT;
 
 static uint16_t state_handle;
 static uint16_t gesture_handle;
@@ -100,30 +101,42 @@ static uint8_t discover_func(
 }
 
 // Advertisement matching
-static bool match_service(
+struct advertisement_match {
+    bool service_found;
+    bool name_found;
+    const char *target_name;
+};
+
+static bool match_target_ad(
     struct bt_data *data,
     void *user_data)
 {
-    bool *found = user_data;
+    struct advertisement_match *match = user_data;
 
-    static const uint8_t expected[] = {
+    static const uint8_t expected_service[] = {
         MYO_SERVICE_UUID_BYTES
     };
 
-    if (data->type != BT_DATA_UUID128_ALL &&
-        data->type != BT_DATA_UUID128_SOME) {
-        return true;
+    if (data->type == BT_DATA_UUID128_ALL ||
+        data->type == BT_DATA_UUID128_SOME) {
+        for (size_t i = 0;
+             i + sizeof(expected_service) <= data->data_len;
+             i += sizeof(expected_service)) {
+
+            if (memcmp(data->data + i, expected_service,
+                       sizeof(expected_service)) == 0) {
+                match->service_found = true;
+                break;
+            }
+        }
     }
 
-    for (size_t i = 0;
-         i + sizeof(expected) <= data->data_len;
-         i += sizeof(expected)) {
-
-        if (memcmp(data->data + i,
-                   expected,
-                   sizeof(expected)) == 0) {
-            *found = true;
-            return false;
+    if (data->type == BT_DATA_NAME_COMPLETE) {
+        size_t expected_length = strlen(match->target_name);
+        if (data->data_len == expected_length &&
+            memcmp(data->data, match->target_name,
+                   expected_length) == 0) {
+            match->name_found = true;
         }
     }
 
@@ -145,16 +158,33 @@ static void device_found(
 
     k_mutex_lock(&ble_lock, K_FOREVER);
     bool busy = peer_conn != NULL;
+    enum myo_receiver_mode requested = current_mode;
     k_mutex_unlock(&ble_lock);
 
     if (busy) {
         return;
     }
 
-    bool found = false;
-    bt_data_parse(ad, match_service, &found);
+    const char *target_name =
+        requested == MYO_MODE_LIGHT ? "MyoLight" : "MyoPC";
 
-    if (!found) {
+    struct advertisement_match match = {
+        .service_found = false,
+        .name_found = false,
+        .target_name = target_name
+    };
+
+    bt_data_parse(ad, match_target_ad, &match);
+    if (!match.service_found || !match.name_found) {
+        return;
+    }
+
+    // The mode may have changed while parsing the packet.
+    k_mutex_lock(&ble_lock, K_FOREVER);
+    bool still_selected =
+        requested == current_mode && peer_conn == NULL;
+    k_mutex_unlock(&ble_lock);
+    if (!still_selected) {
         return;
     }
 
@@ -163,7 +193,6 @@ static void device_found(
     }
 
     struct bt_conn *conn = NULL;
-
     int err = bt_conn_le_create(
         addr,
         BT_CONN_LE_CREATE_CONN,
@@ -180,7 +209,7 @@ static void device_found(
     peer_conn = conn;
     k_mutex_unlock(&ble_lock);
 
-    LOG_INF("Connecting to GestureControl receiver");
+    LOG_INF("Connecting to %s", target_name);
 }
 
 static void start_scan(void)
@@ -478,4 +507,46 @@ bool myo_ble_client_brightness_ready(void)
     k_mutex_unlock(&ble_lock);
 
     return ready;
+}
+
+int myo_ble_client_toggle_mode(void)
+{
+    struct bt_conn *old_conn = NULL;
+
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    current_mode = current_mode == MYO_MODE_LIGHT
+        ? MYO_MODE_COMPUTER : MYO_MODE_LIGHT;
+
+    enum myo_receiver_mode selected = current_mode;
+
+    if (peer_conn != NULL) {
+        old_conn = bt_conn_ref(peer_conn);
+        // Block commands from reaching the old receiver.
+        state_handle = 0;
+        gesture_handle = 0;
+        brightness_handle = 0;
+    }
+
+    k_mutex_unlock(&ble_lock);
+
+    LOG_INF("MODE SWITCH: %s",
+            selected == MYO_MODE_LIGHT ? "LIGHT" : "COMPUTER");
+
+    if (old_conn != NULL) {
+        // disconnected() restarts the scan automatically.
+        int err = bt_conn_disconnect(
+            old_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+        bt_conn_unref(old_conn);
+
+        if (err && err != -ENOTCONN) {
+            LOG_ERR("Mode disconnect failed: %d", err);
+            return err;
+        }
+    } else {
+        // If already scanning, start_scan() ignores -EALREADY.
+        start_scan();
+    }
+
+    return 0;
 }

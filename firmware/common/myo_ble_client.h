@@ -25,4 +25,12 @@ int myo_ble_client_send_brightness(uint8_t percent);
 // characteristic has been discovered.
 bool myo_ble_client_brightness_ready(void);
 
+enum myo_receiver_mode {
+    MYO_MODE_LIGHT = 0,
+    MYO_MODE_COMPUTER = 1
+};
+
+// Disconnect and connect to the other receiver type.
+int myo_ble_client_toggle_mode(void);
+
 #endif

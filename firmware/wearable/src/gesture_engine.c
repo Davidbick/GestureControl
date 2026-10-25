@@ -5,6 +5,8 @@
 
 #define REST_CONFIRM_MS       350U
 #define FLEX_HOLD_MS         1100U
+#define MODE_HOLD_MS         5000U
+#define FLEX_RELEASE_GRACE_MS 200U
 #define MOTION_BLOCK_MS       650U
 #define SWIPE_GRACE_MS        450U
 #define ACTION_COOLDOWN_MS    400U
@@ -123,11 +125,68 @@ enum myo_gesture gesture_engine_update(
         return MYO_GESTURE_NONE;
     }
 
-    // Stable REST re-arms SELECT.
-    if (emg_class == EMG_REST) {
 
+    // Short FLEX performs SELECT on release; five seconds
+    // changes receiver without sending a SELECT first.
+    if (emg_class == EMG_FLEX) {
+        engine->rest_tracking = false;
+
+        if (!engine->select_armed) {
+            engine->flex_tracking = false;
+            return MYO_GESTURE_NONE;
+        }
+
+        // A long prediction gap breaks the hold.
+        if (engine->flex_tracking &&
+            (uint32_t)(now_ms - engine->flex_last_seen_ms)
+                >= FLEX_RELEASE_GRACE_MS) {
+            engine->flex_tracking = false;
+        }
+
+        if (!engine->flex_tracking) {
+            engine->flex_tracking = true;
+            engine->flex_since_ms = now_ms;
+            engine->flex_last_seen_ms = now_ms;
+            return MYO_GESTURE_NONE;
+        }
+
+        engine->flex_last_seen_ms = now_ms;
+
+        if ((uint32_t)(now_ms - engine->flex_since_ms)
+            >= MODE_HOLD_MS) {
+            engine->mode_switch_pending = true;
+            engine->flex_tracking = false;
+            engine->select_armed = false;
+            engine->rest_tracking = false;
+            engine->cooldown_until_ms =
+                now_ms + ACTION_COOLDOWN_MS;
+        }
+
+        return MYO_GESTURE_NONE;
+    }
+
+    // A brief ML flicker should not end an ongoing FLEX.
+    if (engine->flex_tracking) {
+        if ((uint32_t)(now_ms - engine->flex_last_seen_ms)
+            < FLEX_RELEASE_GRACE_MS) {
+            return MYO_GESTURE_NONE;
+        }
+
+        uint32_t held_ms =
+            engine->flex_last_seen_ms - engine->flex_since_ms;
         engine->flex_tracking = false;
 
+        if (held_ms >= FLEX_HOLD_MS &&
+            !before_deadline(now_ms, engine->cooldown_until_ms)) {
+            engine->select_armed = false;
+            engine->cooldown_until_ms =
+                now_ms + ACTION_COOLDOWN_MS;
+            return MYO_GESTURE_TENSE;
+        }
+    }
+
+    // Stable REST re-arms SELECT and MODE SWITCH.
+    if (emg_class == EMG_REST) {
         if (!engine->rest_tracking) {
             engine->rest_tracking = true;
             engine->rest_since_ms = now_ms;
@@ -135,50 +194,22 @@ enum myo_gesture gesture_engine_update(
 
         if ((uint32_t)(now_ms - engine->rest_since_ms)
             >= REST_CONFIRM_MS) {
-
             engine->select_armed = true;
         }
-
-        return MYO_GESTURE_NONE;
-    }
-
-    engine->rest_tracking = false;
-
-    // EXTEND is already handled by the existing
-    // brightness estimator. It is not SELECT.
-    if (emg_class != EMG_FLEX) {
-        engine->flex_tracking = false;
-        return MYO_GESTURE_NONE;
-    }
-
-    // Never generate repeated SELECT commands
-    // while the user holds FLEX.
-    if (!engine->select_armed) {
-        engine->flex_tracking = false;
-        return MYO_GESTURE_NONE;
-    }
-
-    if (!engine->flex_tracking) {
-        engine->flex_tracking = true;
-        engine->flex_since_ms = now_ms;
-        return MYO_GESTURE_NONE;
-    }
-
-    if ((uint32_t)(now_ms - engine->flex_since_ms)
-            >= FLEX_HOLD_MS &&
-        !before_deadline(
-            now_ms, engine->cooldown_until_ms)) {
-
-        engine->select_armed = false;
-        engine->flex_tracking = false;
-
-        engine->cooldown_until_ms =
-            now_ms + ACTION_COOLDOWN_MS;
-
-        // Existing receiver maps TENSE to Enter
-        // and LED toggle. This is our SELECT action.
-        return MYO_GESTURE_TENSE;
+    } else {
+        engine->rest_tracking = false;
     }
 
     return MYO_GESTURE_NONE;
+}
+
+bool gesture_engine_take_mode_switch(
+    struct gesture_engine *engine)
+{
+    if (engine == NULL || !engine->mode_switch_pending) {
+        return false;
+    }
+
+    engine->mode_switch_pending = false;
+    return true;
 }

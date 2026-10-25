@@ -335,6 +335,15 @@ int main(void)
                     pending_swipe
                 );
 
+                // Mode changes are local to the wearable.
+                if (gesture_engine_take_mode_switch(
+                        &gesture_control)) {
+                    int mode_err = myo_ble_client_toggle_mode();
+                    if (mode_err) {
+                        LOG_WRN("Mode switch error: %d", mode_err);
+                    }
+                }
+
                 if (action != MYO_GESTURE_NONE) {
 
                     // Existing BLE central already supports

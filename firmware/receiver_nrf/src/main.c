@@ -209,7 +209,7 @@ static const struct bt_data ad[] = {
 
     BT_DATA_BYTES(
         BT_DATA_NAME_COMPLETE,
-        'M', 'y', 'o', 'R', 'x'),
+        'M', 'y', 'o', 'P', 'C'),
 };
 
 static void start_advertising(void)
@@ -222,7 +222,7 @@ static void start_advertising(void)
     if (err) {
         LOG_ERR("Advertising failed: %d", err);
     } else {
-        LOG_INF("Advertising as MyoRx");
+        LOG_INF("Advertising as MyoPC");
     }
 }
 

@@ -16,9 +16,11 @@ struct gesture_engine {
     bool rest_tracking;
     bool flex_tracking;
     bool have_valid_orientation;
+    bool mode_switch_pending;
 
     uint32_t rest_since_ms;
     uint32_t flex_since_ms;
+    uint32_t flex_last_seen_ms;
     uint32_t last_valid_ms;
 
     uint32_t motion_block_until_ms;
@@ -36,5 +38,9 @@ enum myo_gesture gesture_engine_update(
     bool significant_motion,
     enum swipe_event swipe
 );
+
+// Consume a local receiver-mode change request.
+bool gesture_engine_take_mode_switch(
+    struct gesture_engine *engine);
 
 #endif
