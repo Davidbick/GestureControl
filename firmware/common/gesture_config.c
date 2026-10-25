@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/att.h>
 
 K_MUTEX_DEFINE(gc_config_lock);
@@ -10,6 +11,7 @@ K_MUTEX_DEFINE(gc_config_lock);
 static enum gc_target active_target;
 static struct gc_mapping mappings[GC_GESTURE_COUNT + 1];
 static struct gc_config_response last_response;
+static atomic_t config_revision;
 static uint8_t device_info[4];
 
 static bool valid_gesture(uint8_t gesture)
@@ -71,6 +73,7 @@ void gc_config_init(enum gc_target target)
     k_mutex_lock(&gc_config_lock, K_FOREVER);
 
     active_target = target;
+    atomic_set(&config_revision, 0);
 
     for (uint8_t i = 1; i <= GC_GESTURE_COUNT; i++) {
         mappings[i] = default_mapping(i);
@@ -101,6 +104,11 @@ struct gc_mapping gc_config_get(uint8_t gesture)
     return result;
 }
 
+uint32_t gc_config_revision(void)
+{
+    return (uint32_t)atomic_get(&config_revision);
+}
+
 static enum gc_status validate_mapping(const struct gc_mapping *m)
 {
     uint8_t action = m->action;
@@ -115,7 +123,8 @@ static enum gc_status validate_mapping(const struct gc_mapping *m)
     bool computer_action =
         (action >= GC_ACTION_KEY_TAP &&
          action <= GC_ACTION_MOUSE_SCROLL_DOWN) ||
-        action == GC_ACTION_MOUSE_DOUBLE_CLICK;
+        (action == GC_ACTION_MOUSE_DOUBLE_CLICK) ||
+        (action == GC_ACTION_KEY_TOGGLE);
     bool light_action =
         action >= GC_ACTION_LIGHT_TOGGLE &&
         action <= GC_ACTION_LIGHT_BRIGHTNESS_DOWN;
@@ -125,11 +134,14 @@ static enum gc_status validate_mapping(const struct gc_mapping *m)
         return GC_STATUS_UNSUPPORTED_ACTION;
     }
 
-    if (action == GC_ACTION_KEY_TAP) {
+    if (action == GC_ACTION_KEY_TAP ||
+        action == GC_ACTION_KEY_TOGGLE) {
+        bool duration_ok = action == GC_ACTION_KEY_TOGGLE
+            ? m->duration_ms == 0
+            : (m->duration_ms >= 30 && m->duration_ms <= 2000);
         return m->keycode >= 0x04 && m->keycode <= 0xA4 &&
                (m->modifiers & 0xF0) == 0 &&
-               m->amount == 0 &&
-               m->duration_ms >= 30 && m->duration_ms <= 2000
+               m->amount == 0 && duration_ok
             ? GC_STATUS_OK : GC_STATUS_INVALID_PARAMETER;
     }
 
@@ -230,6 +242,13 @@ static void process_request(const struct gc_config_request *req,
         }
     } else if (req->operation == GC_OP_RESET) {
         mappings[req->gesture] = default_mapping(req->gesture);
+    }
+
+    if (status == GC_STATUS_OK &&
+        (req->operation == GC_OP_SET ||
+         req->operation == GC_OP_RESET ||
+         req->operation == GC_OP_RESET_ALL)) {
+        atomic_inc(&config_revision);
     }
 
     rsp->status = status;

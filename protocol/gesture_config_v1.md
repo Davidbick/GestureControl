@@ -37,7 +37,7 @@ Operations: GET=1, SET=2, RESET=3, RESET_ALL=4. For RESET_ALL, gesture=0. Other 
 
 Gestures: SWIPE_UP=1, SWIPE_DOWN=2, SWIPE_LEFT=3, SWIPE_RIGHT=4, TENSE=5.
 
-Actions: NONE=0, KEY_TAP=1, MOUSE_LEFT_CLICK=2, MOUSE_RIGHT_CLICK=3, MOUSE_MIDDLE_CLICK=4, MOUSE_MOVE_UP=5, MOUSE_MOVE_DOWN=6, MOUSE_MOVE_LEFT=7, MOUSE_MOVE_RIGHT=8, MOUSE_SCROLL_UP=9, MOUSE_SCROLL_DOWN=10, LIGHT_TOGGLE=11, LIGHT_ON=12, LIGHT_OFF=13, LIGHT_SET_BRIGHTNESS=14, LIGHT_BRIGHTNESS_UP=15, LIGHT_BRIGHTNESS_DOWN=16, MOUSE_DOUBLE_CLICK=17.
+Actions: NONE=0, KEY_TAP=1, MOUSE_LEFT_CLICK=2, MOUSE_RIGHT_CLICK=3, MOUSE_MIDDLE_CLICK=4, MOUSE_MOVE_UP=5, MOUSE_MOVE_DOWN=6, MOUSE_MOVE_LEFT=7, MOUSE_MOVE_RIGHT=8, MOUSE_SCROLL_UP=9, MOUSE_SCROLL_DOWN=10, LIGHT_TOGGLE=11, LIGHT_ON=12, LIGHT_OFF=13, LIGHT_SET_BRIGHTNESS=14, LIGHT_BRIGHTNESS_UP=15, LIGHT_BRIGHTNESS_DOWN=16, MOUSE_DOUBLE_CLICK=17; KEY_TOGGLE=18.
 
 Modifier bits: CTRL=1, SHIFT=2, ALT=4, GUI=8. Keys are USB HID usage IDs, not ASCII. Defaults: tap/click 35 ms; movement 40; scroll 1; brightness step 25. Duration valid 30..2000 ms; mouse movement 1..127; scrolling 1..10; light brightness set 0..100; brightness step 1..100. Unsupported action/target combinations are rejected.
 
@@ -54,6 +54,8 @@ After writing the command characteristic, read Response and verify version, tran
 | Left | KEY_TAP LEFT_ARROW | NONE |
 | Right | KEY_TAP RIGHT_ARROW | NONE |
 | TENSE | KEY_TAP ENTER | LIGHT_TOGGLE |
+
+KEY_TOGGLE is a computer-only key action using keycode and modifiers with zero duration. The same gesture toggles its key down/up; five different gesture toggles can be held simultaneously. KEY_TAP preserves active toggled keys. The HID worker releases all held keys on controller disconnect, USB disconnect, or SET/RESET operations (including RESET_ALL).
 
 Mappings live in **RAM only**: they survive BLE disconnects and Wio mode switches; power cycling the receiver restores defaults. `reset_gesture_mapping` explicitly restores one or all mappings. This does not reset physical light power state.
 

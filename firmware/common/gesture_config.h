@@ -49,7 +49,8 @@ enum gc_action {
     GC_ACTION_LIGHT_SET_BRIGHTNESS = 14,
     GC_ACTION_LIGHT_BRIGHTNESS_UP = 15,
     GC_ACTION_LIGHT_BRIGHTNESS_DOWN = 16,
-    GC_ACTION_MOUSE_DOUBLE_CLICK = 17
+    GC_ACTION_MOUSE_DOUBLE_CLICK = 17,
+    GC_ACTION_KEY_TOGGLE = 18
 };
 
 enum gc_status {
@@ -108,6 +109,7 @@ _Static_assert(sizeof(struct gc_config_response) == GC_CONFIG_PACKET_SIZE,
 
 void gc_config_init(enum gc_target target);
 struct gc_mapping gc_config_get(uint8_t gesture);
+uint32_t gc_config_revision(void);
 
 ssize_t gc_config_write(struct bt_conn *conn,
                         const struct bt_gatt_attr *attr,

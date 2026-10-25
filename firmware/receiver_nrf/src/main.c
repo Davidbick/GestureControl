@@ -354,6 +354,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
         atomic_set(&rx_valid, 0);
         atomic_inc(&session_epoch);
         k_msgq_purge(&gesture_queue);
+        myo_usb_hid_release_all();
         LOG_INF("Gesture controller disconnected");
     } else {
         LOG_INF("Configuration/unclaimed peer disconnected");
@@ -427,7 +428,7 @@ static void process_gesture(
     }
 
     struct gc_mapping mapping = gc_config_get(gesture);
-    int hid_err = myo_usb_hid_enqueue(&mapping);
+    int hid_err = myo_usb_hid_enqueue(gesture, &mapping);
 
     if (hid_err == -ENOTCONN) {
         LOG_DBG("USB not connected, HID skipped");

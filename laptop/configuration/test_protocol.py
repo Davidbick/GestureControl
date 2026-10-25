@@ -39,6 +39,22 @@ class PacketTests(unittest.TestCase):
         self.assertEqual(packet[5], 14)
         self.assertEqual(packet[8], 75)
 
+    def test_key_toggle(self):
+        packet, target = ble_config.build_packet(
+            call("set_gesture_mapping", target="COMPUTER",
+                 gesture="SWIPE_UP", action="KEY_TOGGLE", key="W"))
+        self.assertEqual(target, "COMPUTER")
+        self.assertEqual(packet[5], 18)
+        self.assertEqual(packet[6], 0x1A)
+        self.assertEqual(packet[9:11], bytes(2))
+
+    def test_toggle_rejects_duration(self):
+        with self.assertRaises(ValueError):
+            ble_config.build_packet(
+                call("set_gesture_mapping", target="COMPUTER",
+                     gesture="SWIPE_UP", action="KEY_TOGGLE",
+                     key="W", duration_ms=100))
+
     def test_reset_all(self):
         packet, _ = ble_config.build_packet(
             call("reset_gesture_mapping", target="COMPUTER", gesture="ALL"))

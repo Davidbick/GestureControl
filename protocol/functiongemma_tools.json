@@ -29,6 +29,7 @@
             "enum": [
               "NONE",
               "KEY_TAP",
+              "KEY_TOGGLE",
               "MOUSE_LEFT_CLICK",
               "MOUSE_RIGHT_CLICK",
               "MOUSE_MIDDLE_CLICK",

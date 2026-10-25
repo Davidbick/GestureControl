@@ -38,6 +38,7 @@ ACTIONS = {
     "LIGHT_BRIGHTNESS_UP": 15,
     "LIGHT_BRIGHTNESS_DOWN": 16,
     "MOUSE_DOUBLE_CLICK": 17,
+    "KEY_TOGGLE": 18,
 }
 KEYS = {
     "ENTER": 0x28,
@@ -149,7 +150,7 @@ def build_packet(call):
             raise ValueError(f"Unknown action: {action_name}")
         action = ACTIONS[action_name]
 
-        computer_action = 1 <= action <= 10 or action == 17
+        computer_action = 1 <= action <= 10 or action in (17, 18)
         light_action = 11 <= action <= 16
         if target == "COMPUTER" and light_action:
             raise ValueError("Light action assigned to computer")
@@ -162,8 +163,10 @@ def build_packet(call):
         scrolling = {9, 10}
         brightness = {14, 15, 16}
 
-        if action == 1:
-            allowed |= {"key", "modifiers", "duration_ms"}
+        if action in (1, 18):
+            allowed |= {"key", "modifiers"}
+            if action == 1:
+                allowed.add("duration_ms")
             if "key" not in args:
                 raise ValueError("KEY_TAP requires key")
             keycode = keycode_for(args["key"])
@@ -174,8 +177,9 @@ def build_packet(call):
                 if modifier not in MODIFIERS:
                     raise ValueError(f"Unknown modifier: {modifier}")
                 modifiers |= MODIFIERS[modifier]
-            duration_ms = _integer(args.get("duration_ms", 35),
-                                   "duration_ms", 30, 2000)
+            if action == 1:
+                duration_ms = _integer(args.get("duration_ms", 35),
+                                       "duration_ms", 30, 2000)
         elif action in clicks:
             allowed.add("duration_ms")
             duration_ms = _integer(args.get("duration_ms", 35),
