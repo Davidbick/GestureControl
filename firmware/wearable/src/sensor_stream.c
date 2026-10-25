@@ -2,6 +2,7 @@
 #include "sensor_stream.h"
 #include "emg_inference.h"
 #include "swipe.h"
+#include "orientation.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -38,6 +39,7 @@ static atomic_t read_errors;
 
 static uint32_t next_sequence;
 static struct swipe_detector swipe_detector;
+static struct orientation_gate gate;
 // Transfer one-shot swipe events from acquisition
 // thread to main thread without losing short events.
 K_MSGQ_DEFINE(
@@ -89,10 +91,17 @@ static void acquisition_thread(
         int imu_ret = imu_read_motion(&frame.motion);
 
         if (emg_ret == 0 && imu_ret == 0) {
+            // Evaluate the shared orientation gate at 100 Hz.
+            frame.orientation_valid = orientation_update(
+                &gate, &frame.motion.accel, frame.timestamp_ms);
+            frame.orientation_angle_deg = (int16_t)
+                orientation_angle_deg(&gate, &frame.motion.accel);
+
             enum swipe_event event = swipe_update(
                 &swipe_detector,
                 &frame.motion,
-                frame.timestamp_ms
+                frame.timestamp_ms,
+                frame.orientation_valid
             );
 
             if (event != SWIPE_NONE) {
@@ -160,6 +169,11 @@ static void acquisition_thread(
 
         } else {
             atomic_inc(&read_errors);
+            orientation_invalidate(&gate);
+            // Never expose a previously valid frame after a read error.
+            k_mutex_lock(&latest_lock, K_FOREVER);
+            latest_valid = false;
+            k_mutex_unlock(&latest_lock);
         }
 
         // Maintain absolute sample deadlines.
@@ -241,8 +255,13 @@ K_THREAD_DEFINE(
     8, 0, 0
 );
 
-void sensor_stream_start(void)
+int sensor_stream_start(
+    const struct imu_accel_sample *reference)
 {
+    if (reference == NULL) return -EINVAL;
+
+    // One reference for both receiver modes.
+    orientation_set_reference(&gate, reference);
     swipe_init(&swipe_detector);
 
     atomic_set(&dropped_samples, 0);
@@ -250,6 +269,7 @@ void sensor_stream_start(void)
 
     k_sem_give(&acquisition_start);
     k_sem_give(&output_start);
+    return 0;
 }
 
 int sensor_stream_latest(struct sensor_frame *sample)
@@ -266,9 +286,13 @@ int sensor_stream_latest(struct sensor_frame *sample)
     }
 
     *sample = latest_frame;
-
     k_mutex_unlock(&latest_lock);
 
+    // A cached reading must not be mistaken for a live gate.
+    if ((uint32_t)(k_uptime_get_32() -
+            sample->timestamp_ms) > 150U) {
+        return -EAGAIN;
+    }
     return 0;
 }
 

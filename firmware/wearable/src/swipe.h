@@ -35,7 +35,8 @@ void swipe_init(struct swipe_detector *detector);
 enum swipe_event swipe_update(
     struct swipe_detector *detector,
     const struct imu_motion_sample *motion,
-    uint32_t timestamp_ms
+    uint32_t timestamp_ms,
+    bool allow_start
 );
 
 #endif

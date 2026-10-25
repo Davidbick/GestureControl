@@ -64,7 +64,8 @@ static enum swipe_event recognize(const float vector[3])
 enum swipe_event swipe_update(
     struct swipe_detector *d,
     const struct imu_motion_sample *motion,
-    uint32_t timestamp_ms
+    uint32_t timestamp_ms,
+    bool allow_start
 )
 {
     if (d == NULL || motion == NULL) {
@@ -130,9 +131,10 @@ enum swipe_event swipe_update(
         return recognize(mean);
     }
 
-    // 2. Detect the start of a new swipe.
+    // A swipe starts inside the gate; it may finish outside.
     if (d->armed) {
-        if (energy >= SWIPE_THRESHOLD_MDPS) {
+        if (allow_start &&
+            energy >= SWIPE_THRESHOLD_MDPS) {
             d->collecting = true;
             d->onset_ms = timestamp_ms;
             d->vector_count = 1;

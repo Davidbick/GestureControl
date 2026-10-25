@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <math.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -17,13 +19,16 @@ LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
 
 #define LED0_NODE DT_ALIAS(led0)
 #define CALIBRATION_SAMPLES 100
+#define CALIBRATION_INTERVAL_MS 20
+#define CALIBRATION_MAX_DRIFT_COS 0.9781476f
+#define SENSOR_WARNING_INTERVAL_MS 1000
 #define SAMPLE_INTERVAL_MS 50
 #define BLE_HEARTBEAT_MS 500
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
-static struct orientation_gate orientation;
+// Orientation gate owned by acquisition thread.
 static struct brightness_estimator brightness;
 static struct gesture_engine gesture_control;
 
@@ -81,6 +86,57 @@ static int capture_emg0_average_mv(int32_t *average_mv)
 }
 
 
+static int capture_startup_reference(
+    struct imu_accel_sample *reference)
+{
+    if (reference == NULL) return -EINVAL;
+
+    int64_t sum_x = 0, sum_y = 0, sum_z = 0;
+    struct imu_accel_sample first = {0};
+    float first_magnitude = 0.0f;
+
+    for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
+        struct imu_accel_sample sample;
+        int err = imu_read_accel(&sample);
+        if (err < 0) return err;
+
+        float x = (float)sample.x_mg;
+        float y = (float)sample.y_mg;
+        float z = (float)sample.z_mg;
+        float magnitude = sqrtf(x*x + y*y + z*z);
+
+        if (magnitude < 800.0f || magnitude > 1200.0f) {
+            return -EAGAIN;
+        }
+
+        if (i == 0) {
+            first = sample;
+            first_magnitude = magnitude;
+        } else {
+            float dot =
+                x * first.x_mg +
+                y * first.y_mg +
+                z * first.z_mg;
+
+            // Reject calibration if the arm drifts by over 12 degrees.
+            if (dot < CALIBRATION_MAX_DRIFT_COS *
+                      magnitude * first_magnitude) {
+                return -EAGAIN;
+            }
+        }
+
+        sum_x += sample.x_mg;
+        sum_y += sample.y_mg;
+        sum_z += sample.z_mg;
+        k_msleep(CALIBRATION_INTERVAL_MS);
+    }
+
+    reference->x_mg = (int32_t)(sum_x / CALIBRATION_SAMPLES);
+    reference->y_mg = (int32_t)(sum_y / CALIBRATION_SAMPLES);
+    reference->z_mg = (int32_t)(sum_z / CALIBRATION_SAMPLES);
+    return 0;
+}
+
 int main(void)
 {
     if (!gpio_is_ready_dt(&led)) {
@@ -109,59 +165,40 @@ int main(void)
         return 0;
     }
 
-    LOG_INF("Hold wearable in control orientation");
-    LOG_INF("Calibrating in 2 seconds...");
+    // Capture one shared orientation reference at startup.
+    struct imu_accel_sample reference = {0};
 
-    k_msleep(2000);
+    while (1) {
+        LOG_INF("STARTUP ORIENTATION CALIBRATION");
+        LOG_INF("Hold wearable in your control position.");
+        LOG_INF("Hold still during the 2-second capture.");
+        LOG_INF("Starting calibration in 2 seconds...");
+        k_msleep(2000);
 
-    int valid_samples = 0;
-    int64_t sum_x = 0;
-    int64_t sum_y = 0;
-    int64_t sum_z = 0;
-
-    for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-
-        struct imu_accel_sample sample;
-
-        if (imu_read_accel(&sample) == 0) {
-
-            sum_x += sample.x_mg;
-            sum_y += sample.y_mg;
-            sum_z += sample.z_mg;
-            valid_samples++;
+        int err = capture_startup_reference(&reference);
+        if (err == 0) {
+            LOG_INF("Orientation calibration successful.");
+            break;
         }
-
-        k_msleep(20);
-    }
-    
-    if (valid_samples == 0) {
-        LOG_ERR("No valid IMU calibration samples");
-        return 0;
+        LOG_WRN("Calibration failed (%d); retrying...", err);
+        k_msleep(500);
     }
 
-    struct imu_accel_sample reference = {
-        .x_mg = sum_x / valid_samples,
-        .y_mg = sum_y / valid_samples,
-        .z_mg = sum_z / valid_samples
-    };
+    LOG_INF("Gate reference: X=%d Y=%d Z=%d",
+            reference.x_mg, reference.y_mg, reference.z_mg);
+    LOG_INF("Reference applies to both Light and Laptop modes.");
 
-    orientation_set_reference(
-        &orientation,
-        &reference);
-
-    LOG_INF("Reference: x=%d y=%d z=%d",
-            reference.x_mg,
-            reference.y_mg,
-            reference.z_mg);
-    
-    
     // Start BLE after sensor calibration
     if (ble_init() < 0) {
         LOG_ERR("BLE initialization failed");
         return 0;
     }
     // Start continuous EMG + IMU acquisition.
-    sensor_stream_start();
+    int stream_err = sensor_stream_start(&reference);
+    if (stream_err < 0) {
+        LOG_ERR("Sensor stream failed: %d", stream_err);
+        return 0;
+    }
         
     // Brightness calibration uses EMG0.
     // Keep the arm in its calibrated control orientation.
@@ -229,6 +266,7 @@ int main(void)
     uint8_t last_sent = 0xff;
     int64_t last_tx_ms = 0;
     int64_t last_log_ms = 0;
+    int64_t last_sensor_warning_ms = 0;
     int last_reported_class = -2;
     // Brightness transmission state.
     uint8_t last_brightness_sent = 0xff;
@@ -246,12 +284,8 @@ int main(void)
 
         if (ret == 0) {
 
-            valid =
-                orientation_update(
-                    &orientation,
-                    &accel);
-                        
-            
+            valid = frame.orientation_valid;
+
             // Read the latest EMG ML prediction.
             emg_class_t predicted_class = EMG_REST;
 
@@ -289,12 +323,8 @@ int main(void)
 
 
             
-            int angle =
-                orientation_angle_deg(
-                    &orientation,
-                    &accel);
+            int angle = frame.orientation_angle_deg;
 
-            
             // Run command recognition only for fresh sensor data.
             uint32_t gesture_now = k_uptime_get_32();
 
@@ -444,13 +474,14 @@ int main(void)
                 last_log_ms = log_now;
             }
         } else {
-            LOG_ERR("Accelerometer read failed: %d", ret);
+            int64_t warning_now = k_uptime_get();
+            if (warning_now - last_sensor_warning_ms >=
+                SENSOR_WARNING_INTERVAL_MS) {
+                LOG_WRN("Sensor frame unavailable or stale: %d", ret);
+                last_sensor_warning_ms = warning_now;
+            }
 
             brightness_adjusting = false;
-
-            // Reset gate after a failed reading
-            orientation.valid = false;
-            orientation.candidate_since_ms = -1;
             if (brightness_ready) {
                 brightness_update(
                     &brightness,

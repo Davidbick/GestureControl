@@ -16,12 +16,16 @@ struct sensor_frame {
     struct emg_sample emg;
     struct imu_motion_sample motion;
 
+    bool orientation_valid;
+    int16_t orientation_angle_deg;
+
     uint32_t dropped_total;
     uint32_t errors_total;
 };
 
 // Start acquisition and USB output workers.
-void sensor_stream_start(void);
+int sensor_stream_start(
+    const struct imu_accel_sample *reference);
 
 // Copy the latest valid sample for other firmware.
 int sensor_stream_latest(struct sensor_frame *sample);
