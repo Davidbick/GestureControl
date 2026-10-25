@@ -18,6 +18,13 @@ int myo_ble_client_send_gesture(enum myo_gesture gesture);
 // True once the new gesture characteristic is found.
 bool myo_ble_client_gesture_ready(void);
 
+// Identifies the active receiver session for anti-replay.
+uint32_t myo_ble_client_link_generation(void);
+
+// Transport-level ACK/rejection counts, not actuator success.
+void myo_ble_client_get_gesture_stats(
+    uint32_t *acked, uint32_t *rejected);
+
 // Send quantized brightness, 0 to 100 percent.
 int myo_ble_client_send_brightness(uint8_t percent);
 

@@ -81,6 +81,12 @@ static const char *gesture_text(uint8_t gesture)
     case MYO_GESTURE_TENSE:
         return "TENSE";
 
+    case MYO_GESTURE_FLEX:
+        return "FLEX";
+
+    case MYO_GESTURE_EXTEND:
+        return "EXTEND";
+
     default:
         return "UNKNOWN";
     }

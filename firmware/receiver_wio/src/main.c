@@ -459,9 +459,7 @@ static void begin_gesture_session(void)
     atomic_set(&oled_last_packet, 0);
     atomic_set(&rx_valid, 0);
     atomic_set(&last_rx_ms, 0);
-    atomic_set(&light_on, 0);
-    atomic_set(&brightness_pct, 50);
-    atomic_set(&last_nonzero_brightness, 50);
+    // Preserve lamp state/brightness across BLE sessions.
     atomic_set(&brightness_seq_seen, 0);
     atomic_set(&last_brightness_seq, 0);
     atomic_set(&link_up, 1);
@@ -488,9 +486,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
     if (gesture_lost) {
         atomic_set(&link_up, 0);
         atomic_set(&rx_valid, 0);
-        atomic_set(&light_on, 0);
-        atomic_set(&brightness_pct, 50);
-        atomic_set(&last_nonzero_brightness, 50);
+        // Disconnect stops commands, not the lamp.
         atomic_set(&brightness_seq_seen, 0);
         atomic_set(&last_brightness_seq, 0);
         atomic_inc(&session_epoch);
@@ -738,8 +734,7 @@ int main(void)
 
         // Actual light is controlled by TENSE,
         // not by the validity heartbeat.
-        bool output_on =
-            linked && (atomic_get(&light_on) != 0);
+        bool output_on = atomic_get(&light_on) != 0;
 
         gpio_pin_set_dt(&led, output_on ? 1 : 0);
 

@@ -23,12 +23,87 @@ LOG_MODULE_REGISTER(wearable, LOG_LEVEL_INF);
 #define SENSOR_WARNING_INTERVAL_MS 1000
 #define SAMPLE_INTERVAL_MS 50
 #define BLE_HEARTBEAT_MS 500
+#define GC_TX_DEPTH 8U
+#define GC_TX_MAX_AGE_MS 450U
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 // Orientation gate owned by acquisition thread.
 static struct gesture_engine gesture_control;
+
+// Short-lived main-thread FIFO: no events survive receiver changes.
+struct pending_gesture {
+    enum myo_gesture gesture;
+    uint32_t created_ms;
+    uint32_t link_generation;
+};
+
+static struct pending_gesture tx_queue[GC_TX_DEPTH];
+static uint8_t tx_head, tx_tail, tx_count;
+static uint32_t tx_submitted, tx_dropped;
+
+static void gesture_tx_clear(void)
+{
+    tx_head = tx_tail = tx_count = 0;
+}
+
+static void gesture_tx_pop(void)
+{
+    if (tx_count == 0U) return;
+    tx_head = (uint8_t)((tx_head + 1U) % GC_TX_DEPTH);
+    tx_count--;
+}
+
+static void gesture_tx_enqueue(enum myo_gesture gesture,
+                               uint32_t now_ms)
+{
+    if (!myo_ble_client_gesture_ready()) {
+        tx_dropped++;
+        LOG_WRN("Gesture %d dropped: receiver unavailable", (int)gesture);
+        return;
+    }
+    if (tx_count >= GC_TX_DEPTH) {
+        tx_dropped++;
+        LOG_WRN("Gesture %d dropped: TX queue full", (int)gesture);
+        return;
+    }
+
+    struct pending_gesture *item = &tx_queue[tx_tail];
+    item->gesture = gesture;
+    item->created_ms = now_ms;
+    item->link_generation = myo_ble_client_link_generation();
+    tx_tail = (uint8_t)((tx_tail + 1U) % GC_TX_DEPTH);
+    tx_count++;
+}
+
+static void gesture_tx_poll(uint32_t now_ms)
+{
+    while (tx_count > 0U) {
+        struct pending_gesture *item = &tx_queue[tx_head];
+        if ((uint32_t)(now_ms - item->created_ms) >
+                GC_TX_MAX_AGE_MS ||
+            item->link_generation != myo_ble_client_link_generation() ||
+            !myo_ble_client_gesture_ready()) {
+            tx_dropped++;
+            gesture_tx_pop();
+            continue;
+        }
+
+        int err = myo_ble_client_send_gesture(item->gesture);
+        if (err == -EAGAIN || err == -ENOMEM) break;
+
+        if (err == 0) {
+            tx_submitted++;
+            LOG_INF("Gesture BLE submitted: %d", (int)item->gesture);
+        } else {
+            tx_dropped++;
+            LOG_WRN("Gesture BLE submission failed: %d", err);
+        }
+        gesture_tx_pop();
+    }
+}
+
 
 #define EMG_BASELINE_SAMPLES 40
 #define EMG_BASELINE_INTERVAL_MS 50
@@ -42,12 +117,29 @@ static void blink_work_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
 
-    gpio_pin_toggle_dt(&led);
+    uint32_t phase = k_uptime_get_32() % 1200U;
+    bool ready = myo_ble_client_gesture_ready();
+    bool valid = false;
+    struct sensor_frame frame;
 
-    //LOG_INF("Uptime: %lld ms",
-    //        (long long)k_uptime_get());
+    if (sensor_stream_latest(&frame) == 0) {
+        valid = frame.orientation_valid;
+    }
 
-    k_work_reschedule(&blink_work, K_MSEC(500));
+    bool on;
+    if (!ready) {
+        on = phase < 120U; // Single pulse: disconnected
+    } else if (!valid) {
+        on = phase < 500U; // Slow blink: outside gate
+    } else if (myo_ble_client_get_mode() == MYO_MODE_LIGHT) {
+        on = true;         // Solid: Wio ready
+    } else {
+        on = phase < 120U ||
+             (phase >= 280U && phase < 400U); // Laptop ready
+    }
+
+    gpio_pin_set_dt(&led, on ? 1 : 0);
+    k_work_reschedule(&blink_work, K_MSEC(100));
 }
 
 
@@ -329,6 +421,7 @@ int main(void)
                     LOG_INF("Long TENSE: changing receiver mode");
                     sensor_stream_clear_swipes();
 
+                    gesture_tx_clear();
                     int mode_err = myo_ble_client_toggle_mode();
                     if (mode_err) {
                         LOG_WRN("Mode switch error: %d", mode_err);
@@ -340,24 +433,7 @@ int main(void)
                 }
 
                 if (action != MYO_GESTURE_NONE) {
-
-                    // Existing BLE central already supports
-                    // the two-byte gesture packet.
-                    int send_err =
-                        myo_ble_client_send_gesture(action);
-
-                    if (send_err == 0) {
-                        LOG_INF(
-                            "Gesture command sent: %d",
-                            (int)action
-                        );
-                    } else {
-                        LOG_WRN(
-                            "Gesture command %d not sent: %d",
-                            (int)action,
-                            send_err
-                        );
-                    }
+                    gesture_tx_enqueue(action, gesture_now);
                 }
             }
 
@@ -411,6 +487,7 @@ int main(void)
         } else {
             // Never complete a hold based on missing/stale samples.
             gesture_engine_abort(&gesture_control);
+            gesture_tx_clear();
             sensor_stream_clear_swipes();
 
             int64_t warning_now = k_uptime_get();
@@ -453,10 +530,18 @@ int main(void)
                     stats.ambiguous_rejected, stats.rearms, stats.gaps,
                     queue_drops);
 
+            uint32_t acked = 0, rejected = 0;
+            myo_ble_client_get_gesture_stats(&acked, &rejected);
+            LOG_INF("BLE submitted=%u acked=%u rejected=%u "
+                    "dropped=%u pending=%u",
+                    tx_submitted, acked, rejected, tx_dropped,
+                    (unsigned int)tx_count);
+
             last_swipe_diag_ms = diag_now;
         }
 
-        // Light brightness changes only through mapped gesture events.
+        // Discrete actions only, never continuous EMG brightness.
+        gesture_tx_poll(k_uptime_get_32());
         k_msleep(SAMPLE_INTERVAL_MS);
     }
 

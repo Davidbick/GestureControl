@@ -26,19 +26,11 @@ LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED_NODE, gpios);
 
-    // Legacy: LED reflects orientation validity.
-// Gesture: LED is controlled by gesture events.
-enum led_control_mode {
-    LED_MODE_LEGACY,
-    LED_MODE_GESTURE
-};
-
 static atomic_t link_up;
 static atomic_t advertising_needed;
 static struct gc_receiver_links rx_links;
 static atomic_t rx_valid;
 static atomic_t last_rx_ms;
-static atomic_t led_mode;
 static atomic_t session_epoch;
 
 // A small event queue separates BLE callbacks
@@ -107,7 +99,6 @@ static ssize_t config_info_read(
 }
 
 // Actuation state, owned by main thread.
-static bool gesture_led_on;
 static bool sequence_seen;
 static uint8_t last_sequence;
 static uint32_t processed_session = UINT32_MAX;
@@ -415,9 +406,6 @@ static void process_gesture(
     LOG_INF("Gesture: %s seq=%u",
             gesture_name(gesture), sequence);
 
-    // A classified gesture now owns the actuator.
-    atomic_set(&led_mode, LED_MODE_GESTURE);
-
     if (gesture == MYO_GESTURE_TENSE) {
         if (tense_seen &&
             (uint32_t)(event->timestamp_ms -
@@ -429,8 +417,6 @@ static void process_gesture(
         tense_seen = true;
         last_tense_ms = event->timestamp_ms;
 
-        // Preserve the onboard receiver status LED behavior.
-        gesture_led_on = !gesture_led_on;
     }
 
     struct gc_mapping mapping = gc_config_get(gesture);
@@ -443,40 +429,37 @@ static void process_gesture(
     }
 }
 
-// LED output
+// Status LED is independent of HID and gesture mappings.
 static void update_led(void)
 {
-    bool led_on;
-
-    if (atomic_get(&led_mode) == LED_MODE_GESTURE) {
-        led_on = gesture_led_on;
-    } else {
-
-        // Original wearable validity behavior.
-        uint32_t now = k_uptime_get_32();
-
-        bool fresh =
-            (uint32_t)(now -
-                (uint32_t)atomic_get(&last_rx_ms))
+    uint32_t now = k_uptime_get_32();
+    uint32_t phase = now % 1200U;
+    bool connected = atomic_get(&link_up) != 0;
+    bool fresh = connected &&
+        (uint32_t)(now - (uint32_t)atomic_get(&last_rx_ms))
             < RX_TIMEOUT_MS;
+    bool valid = atomic_get(&rx_valid) != 0;
 
-        led_on =
-            atomic_get(&link_up) &&
-            atomic_get(&rx_valid) &&
-            fresh;
+    bool on;
+    if (!connected) {
+        on = phase < 120U;
+    } else if (!fresh) {
+        on = phase < 120U ||
+             (phase >= 280U && phase < 400U);
+    } else if (!valid) {
+        on = phase < 500U;
+    } else {
+        on = true;
     }
 
-    static int previous_output = -1;
-    int requested_output = led_on ? 1 : 0;
-
-    if (requested_output != previous_output) {
-        int err = gpio_pin_set_dt(
-            &led, requested_output);
-
-        if (err) {
-            LOG_ERR("LED update failed: %d", err);
+    static int last = -1;
+    int requested = on ? 1 : 0;
+    if (requested != last) {
+        int err = gpio_pin_set_dt(&led, requested);
+        if (!err) {
+            last = requested;
         } else {
-            previous_output = requested_output;
+            LOG_WRN("Status LED update failed: %d", err);
         }
     }
 }
@@ -493,7 +476,6 @@ int main(void)
 
     
     LOG_INF("GestureControl receiver starting");
-    atomic_set(&led_mode, LED_MODE_LEGACY);
 
     gc_config_init(GC_TARGET_COMPUTER);
 

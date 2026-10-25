@@ -28,6 +28,22 @@ static uint16_t gesture_handle;
 static uint16_t brightness_handle;
 static uint8_t next_sequence;
 
+// Keep each GATT write's memory valid until its asynchronous callback,
+// even when its BLE connection is replaced by another receiver.
+struct gesture_write_tx {
+    struct bt_gatt_write_params params;
+    struct myo_gesture_packet packet;
+    struct bt_conn *conn;
+    uint32_t link_generation;
+};
+
+K_MEM_SLAB_DEFINE(gesture_tx_pool,
+                  sizeof(struct gesture_write_tx), 4, 4);
+static struct gesture_write_tx *active_gesture_write;
+static uint32_t gesture_link_generation;
+static atomic_t gesture_write_acked;
+static atomic_t gesture_write_rejected;
+
 K_MUTEX_DEFINE(ble_lock);
 
 static struct bt_uuid_128 state_uuid =
@@ -74,8 +90,8 @@ static uint8_t discover_func(
         LOG_INF("GATT complete: state=%u gesture=%u brightness=%u",
         state, gesture, brightness);
 
-        if (state == 0 && gesture == 0) {
-            LOG_WRN("No GestureControl characteristics");
+        if (gesture == 0) {
+            LOG_WRN("Receiver missing gesture characteristic");
             bt_conn_disconnect(
                 conn,
                 BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -387,6 +403,8 @@ static void connected(
         state_handle = 0;
         gesture_handle = 0;
         brightness_handle = 0;
+        gesture_link_generation++;
+        active_gesture_write = NULL;
 
         k_mutex_unlock(&ble_lock);
 
@@ -402,6 +420,8 @@ static void connected(
     gesture_handle = 0;
     brightness_handle = 0;
     next_sequence = 0;
+    gesture_link_generation++;
+    active_gesture_write = NULL;
 
     k_mutex_unlock(&ble_lock);
 
@@ -448,6 +468,8 @@ static void disconnected(
     state_handle = 0;
     gesture_handle = 0;
     brightness_handle = 0;
+    gesture_link_generation++;
+    active_gesture_write = NULL;
 
     if (peer_conn == conn) {
         atomic_set(&central_recycle_pending, 1);
@@ -581,48 +603,92 @@ int myo_ble_client_send_state(uint8_t state)
     return ret;
 }
 
-// New gesture transmission
-int myo_ble_client_send_gesture(enum myo_gesture gesture)
+// A GATT ACK confirms ATT acceptance, not receiver actuation.
+static void gesture_write_complete(
+    struct bt_conn *conn, uint8_t att_err,
+    struct bt_gatt_write_params *params)
 {
-    if (!myo_gesture_valid((uint8_t)gesture)) {
-        return -EINVAL;
-    }
-
-    struct bt_conn *conn;
-    uint16_t handle;
-
-    int err = get_write_target(
-        MYO_WRITE_GESTURE, &conn, &handle);
-
-    if (err) {
-        return err;
-    }
-
-    struct myo_gesture_packet packet;
-
-    packet.gesture = (uint8_t)gesture;
+    struct gesture_write_tx *tx =
+        CONTAINER_OF(params, struct gesture_write_tx, params);
 
     k_mutex_lock(&ble_lock, K_FOREVER);
-    packet.sequence = next_sequence++;
+    if (active_gesture_write == tx) {
+        active_gesture_write = NULL;
+    }
+    bool current = tx->link_generation == gesture_link_generation &&
+                   peer_conn == conn;
     k_mutex_unlock(&ble_lock);
 
-    int ret = bt_gatt_write_without_response(
-        conn,
-        handle,
-        &packet,
-        sizeof(packet),
-        false);
+    if (att_err == 0 && current) {
+        atomic_inc(&gesture_write_acked);
+        LOG_INF("GATT ACK gesture=%u seq=%u",
+                tx->packet.gesture, tx->packet.sequence);
+    } else {
+        atomic_inc(&gesture_write_rejected);
+        LOG_WRN("GATT FAIL gesture=%u seq=%u err=%u current=%u",
+                tx->packet.gesture, tx->packet.sequence,
+                att_err, current ? 1U : 0U);
+    }
 
-    bt_conn_unref(conn);
+    bt_conn_unref(tx->conn);
+    k_mem_slab_free(&gesture_tx_pool, tx);
+}
 
-    return ret;
+int myo_ble_client_send_gesture(enum myo_gesture gesture)
+{
+    if (!myo_gesture_valid((uint8_t)gesture)) return -EINVAL;
+
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    if (!central_enabled || peer_conn == NULL || gesture_handle == 0) {
+        k_mutex_unlock(&ble_lock);
+        return -ENOTCONN;
+    }
+
+    if (active_gesture_write != NULL) {
+        k_mutex_unlock(&ble_lock);
+        return -EAGAIN;
+    }
+
+    struct gesture_write_tx *tx = NULL;
+    if (k_mem_slab_alloc(&gesture_tx_pool, (void **)&tx,
+                         K_NO_WAIT) != 0) {
+        k_mutex_unlock(&ble_lock);
+        return -ENOMEM;
+    }
+
+    memset(tx, 0, sizeof(*tx));
+    tx->conn = bt_conn_ref(peer_conn);
+    tx->link_generation = gesture_link_generation;
+    tx->packet.gesture = (uint8_t)gesture;
+    tx->packet.sequence = next_sequence++;
+
+    tx->params.func = gesture_write_complete;
+    tx->params.handle = gesture_handle;
+    tx->params.offset = 0;
+    tx->params.data = &tx->packet;
+    tx->params.length = sizeof(tx->packet);
+
+    active_gesture_write = tx;
+    k_mutex_unlock(&ble_lock);
+
+    int err = bt_gatt_write(tx->conn, &tx->params);
+    if (err) {
+        // Nonzero submission means no callback owns this memory.
+        k_mutex_lock(&ble_lock, K_FOREVER);
+        if (active_gesture_write == tx) active_gesture_write = NULL;
+        k_mutex_unlock(&ble_lock);
+        bt_conn_unref(tx->conn);
+        k_mem_slab_free(&gesture_tx_pool, tx);
+    }
+    return err;
 }
 
 bool myo_ble_client_gesture_ready(void)
 {
     k_mutex_lock(&ble_lock, K_FOREVER);
 
-    bool ready =
+    bool ready = central_enabled &&
         peer_conn != NULL && gesture_handle != 0;
 
     k_mutex_unlock(&ble_lock);
@@ -684,6 +750,25 @@ bool myo_ble_client_brightness_ready(void)
     return ready;
 }
 
+uint32_t myo_ble_client_link_generation(void)
+{
+    k_mutex_lock(&ble_lock, K_FOREVER);
+    uint32_t generation = gesture_link_generation;
+    k_mutex_unlock(&ble_lock);
+    return generation;
+}
+
+void myo_ble_client_get_gesture_stats(
+    uint32_t *acked, uint32_t *rejected)
+{
+    if (acked != NULL) {
+        *acked = (uint32_t)atomic_get(&gesture_write_acked);
+    }
+    if (rejected != NULL) {
+        *rejected = (uint32_t)atomic_get(&gesture_write_rejected);
+    }
+}
+
 enum myo_receiver_mode myo_ble_client_get_mode(void)
 {
     k_mutex_lock(&ble_lock, K_FOREVER);
@@ -700,6 +785,8 @@ int myo_ble_client_toggle_mode(void)
 
     current_mode = current_mode == MYO_MODE_LIGHT
         ? MYO_MODE_COMPUTER : MYO_MODE_LIGHT;
+    gesture_link_generation++;
+    active_gesture_write = NULL;
 
     enum myo_receiver_mode selected = current_mode;
 
@@ -741,6 +828,8 @@ int myo_ble_client_pause(void)
     k_mutex_lock(&ble_lock, K_FOREVER);
 
     central_enabled = false;
+    gesture_link_generation++;
+    active_gesture_write = NULL;
 
     bool stop_scan = scan_running;
 
@@ -819,6 +908,8 @@ int myo_ble_client_resume_computer(void)
 
     current_mode = MYO_MODE_COMPUTER;
     central_enabled = true;
+    gesture_link_generation++;
+    active_gesture_write = NULL;
 
     k_mutex_unlock(&ble_lock);
 
