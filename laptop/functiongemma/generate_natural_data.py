@@ -1,8 +1,9 @@
 """Reproducibly generate natural-language FunctionGemma single-mapping data.
 
-245 balanced training examples (five per gesture/action combination) and
-49 held-out utterances (one per combination). Held-out sentence templates
-are never used in training. Both sets are validated against the existing
+588 balanced training examples (twelve per gesture/action combination) and
+49 held-out utterances (one per combination). Held-out complete sentence
+templates are never used in training, but every gesture/action expression
+appears in training so evaluation measures compositional generalization. Both sets are validated against the existing
 GestureControl BLE packet encoder; this program never connects to BLE.
 
 Run: python laptop/functiongemma/generate_natural_data.py
@@ -148,12 +149,17 @@ def action_words(action, key, variant):
     return clauses[action][variant]
 
 
-def render_prompt(target, gesture, action, key, variant, heldout_alternate=False):
-    event, nominal = GESTURE_WORDS[gesture][variant]
-    device = DEVICE_WORDS[target][variant]
-    phrase = action_words(action, key, variant)
-    # Five natural training constructions. Held-out constructions are not
-    # used in training and employ new gesture wording (variant 5).
+def render_prompt(target, gesture, action, key, variant, heldout_alternate=None):
+    # The source forms cycle every six examples, but the sentence frames do not.
+    # Exposing all six source forms in training avoids hiding entire vocabulary
+    # (e.g. "contract my whole arm" and "leave the gesture unmapped") at test.
+    form = variant % 6
+    event, nominal = GESTURE_WORDS[gesture][form]
+    device = DEVICE_WORDS[target][form]
+    phrase = action_words(action, key, form)
+    # Twelve training constructions. The original 49 held-out utterances are
+    # preserved exactly, using a different sentence frame from all training
+    # records. The held-out phrases themselves are no longer artificially OOV.
     if variant == 0:
         return f"With {device}, when I {event}, {phrase}."
     if variant == 1:
@@ -164,9 +170,23 @@ def render_prompt(target, gesture, action, key, variant, heldout_alternate=False
         return f"Can {nominal} {phrase} for {device}?"
     if variant == 4:
         return f"Please have {nominal} {phrase} with {device}."
-    if heldout_alternate:
-        return f"Using {device}, I'd like it to {phrase} whenever I {event}."
-    return f"If I {event}, {device} should {phrase}."
+    if variant == 5 and heldout_alternate is not None:
+        # Preserve the preexisting held-out prompts exactly for comparability.
+        if heldout_alternate:
+            return f"Using {device}, I'd like it to {phrase} whenever I {event}."
+        return f"If I {event}, {device} should {phrase}."
+    training_frames = {
+        5: f"When I {event}, tell {device} to {phrase}.",
+        6: f"Configure {device} so that when I {event}, it will {phrase}.",
+        7: f"For {device}, bind {nominal} to {phrase}.",
+        8: f"On {device}, {phrase} whenever I {event}.",
+        9: f"I want {device} to {phrase} after {nominal}.",
+        10: f"Make {device} {phrase} each time I {event}.",
+        11: f"Set {device} to {phrase} when I {event}.",
+    }
+    if variant not in training_frames:
+        raise ValueError(f"Unknown training sentence variant: {variant}")
+    return training_frames[variant]
 
 
 def build_dataset(seed=42):
@@ -178,25 +198,38 @@ def build_dataset(seed=42):
                     for target, actions in ACTIONS.items()
                     for gesture in GESTURES for action in actions]
     for combo_index, (target, gesture, action) in enumerate(combinations):
-        for variant in range(6):
+        # All six lexical forms are included in training, with new frames.
+        # Holdout retains the previous variant=5 labels and exact text.
+        for variant in range(12):
             key = None
             if action in ("KEY_TAP", "KEY_TOGGLE"):
                 key = KEYS[(combo_index * 3 + variant * 7) % len(KEYS)]
-            prompt = render_prompt(target, gesture, action, key, variant,
-                                   heldout_alternate=bool(combo_index % 2))
+            prompt = render_prompt(target, gesture, action, key, variant)
             call = expected_call(target, gesture, action, key)
-            signature(call)  # Real packet validation, before files are written.
-            example = {"prompt": prompt, "call": call}
-            (training if variant < 5 else heldout).append(example)
+            signature(call)
+            training.append({"prompt": prompt, "call": call})
+        test_key = None
+        if action in ("KEY_TAP", "KEY_TOGGLE"):
+            test_key = KEYS[(combo_index * 3 + 5 * 7) % len(KEYS)]
+        test_prompt = render_prompt(target, gesture, action, test_key, 5,
+                                    heldout_alternate=bool(combo_index % 2))
+        test_call = expected_call(target, gesture, action, test_key)
+        signature(test_call)
+        heldout.append({"prompt": test_prompt, "call": test_call})
     rng.shuffle(training)
-    rng.shuffle(heldout)
-    assert len(training) == 245 and len(heldout) == 49
+    # Keep the *exact* original 49-example heldout ordering from v1.
+    # v1 shuffled 245 training entries before shuffling heldout, so
+    # replay that RNG consumption independently of the expanded training set.
+    heldout_rng = random.Random(seed)
+    heldout_rng.shuffle(list(range(245)))
+    heldout_rng.shuffle(heldout)
+    assert len(training) == 588 and len(heldout) == 49
     train_prompts = {e["prompt"].casefold() for e in training}
     heldout_prompts = {e["prompt"].casefold() for e in heldout}
     assert len(train_prompts) == len(training)
     assert len(heldout_prompts) == len(heldout)
     assert train_prompts.isdisjoint(heldout_prompts)
-    for entries, count in ((training, 5), (heldout, 1)):
+    for entries, count in ((training, 12), (heldout, 1)):
         counts = Counter((e["call"]["arguments"]["target"],
                           e["call"]["arguments"]["gesture"],
                           e["call"]["arguments"]["action"]) for e in entries)
