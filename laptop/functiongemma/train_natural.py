@@ -14,7 +14,8 @@ from collections import Counter
 from pathlib import Path
 
 from train_single import (
-    REVISION, TOOLS, expected_call, sample_messages, signature,
+    REVISION, TOOLS, expected_call,
+    messages_for as sample_messages, signature,
 )
 from transformers_backend import MODEL_ID, parse_call
 
