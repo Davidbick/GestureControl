@@ -16,7 +16,7 @@ from sklearn.metrics import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-LABELS = ("REST", "FLEX", "EXTEND")
+LABELS = ("REST", "FLEX", "EXTEND", "TENSE")
 
 # 100 Hz sampling, 400 ms windows, 100 ms hop
 WINDOW = 40
@@ -130,13 +130,13 @@ def main():
 
     if set(y) != set(LABELS) or set(vy) != set(LABELS):
         raise RuntimeError(
-            "All three classes must be present in both CSVs"
+            "All four classes must be present in both CSVs"
         )
 
     candidates = []
 
+    # Both channels are always required for deployment.
     for name, columns in [
-        ("EMG0", [0, 1, 2, 3]),
         ("BOTH", list(range(8)))
     ]:
         for depth in (2, 3, 4, 5):
@@ -255,7 +255,7 @@ def main():
         )
     )
 
-    # Check how a 3-class model behaves during
+    # Check how a four-class model behaves during
     # swipes, neutral motion, and timed flex recordings.
     diagnostic_labels = {
         "NO_GESTURE",

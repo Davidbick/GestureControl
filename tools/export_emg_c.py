@@ -13,21 +13,21 @@ def export_emg_tree(model, feature_names, output_dir):
         0 = REST
         1 = FLEX
         2 = EXTEND
+        3 = TENSE
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    tree = model.tree_
-    names = list(feature_names)
-
     if not hasattr(model, "tree_"):
         raise ValueError("Expected a fitted DecisionTreeClassifier")
 
-    if model.n_features_in_ != len(names):
-        raise ValueError("Feature count mismatch")
+    tree = model.tree_
+    names = list(feature_names)
+    if model.n_features_in_ != len(names) or len(names) != 8:
+        raise ValueError("Expected exactly eight EMG features")
 
     classes = [str(c) for c in model.classes_]
-    expected = {"REST", "FLEX", "EXTEND"}
+    expected = {"REST", "FLEX", "EXTEND", "TENSE"}
 
     if set(classes) != expected:
         raise ValueError(f"Unexpected classes: {classes}")
@@ -38,13 +38,16 @@ def export_emg_tree(model, feature_names, output_dir):
 typedef enum {
     EMG_REST = 0,
     EMG_FLEX = 1,
-    EMG_EXTEND = 2
+    EMG_EXTEND = 2,
+    EMG_TENSE = 3,
+    EMG_UNKNOWN = 4
 } emg_class_t;
 
 #define EMG_FEATURE_COUNT %d
 
 emg_class_t emg_model_predict(
-    const float features[EMG_FEATURE_COUNT]);
+    const float features[EMG_FEATURE_COUNT],
+    const float baseline_mv[2]);
 
 #endif
 """ % len(names)
@@ -53,14 +56,18 @@ emg_class_t emg_model_predict(
         '#include "emg_model.h"',
         "",
         "emg_class_t emg_model_predict(",
-        "    const float features[EMG_FEATURE_COUNT])",
+        "    const float features[EMG_FEATURE_COUNT],",
+        "    const float baseline_mv[2])",
         "{",
+        "    // Trained tree uses raw eight-feature input.",
+        "    (void)baseline_mv;",
     ]
 
     class_map = {
         "REST": "EMG_REST",
         "FLEX": "EMG_FLEX",
         "EXTEND": "EMG_EXTEND",
+        "TENSE": "EMG_TENSE",
     }
 
     def emit(node, indent):

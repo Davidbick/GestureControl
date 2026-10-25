@@ -1,63 +1,52 @@
 #include "emg_model.h"
 
-emg_class_t emg_model_predict(
-    const float features[EMG_FEATURE_COUNT])
+// Provisional thresholds: tune using recorded EMG data.
+#define REST_MAX_DELTA_MV       35.0f
+#define ACTION_MIN_DELTA_MV     85.0f
+#define TENSE_MIN_DELTA_MV      70.0f
+#define DOMINANCE_RATIO          1.65f
+#define DOMINANCE_MARGIN_MV     25.0f
+#define TENSE_BALANCE_RATIO      0.50f
+
+static float positive(float value)
 {
-    if (features[0] <= 7.891000061e+02f) {
-        if (features[1] <= 3.535000000e+02f) {
-            if (features[2] <= 1.274959412e+03f) {
-                if (features[0] <= 8.198749924e+01f) {
-                    return EMG_REST;
-                } else {
-                    return EMG_REST;
-                }
-            } else {
-                if (features[1] <= 3.105000000e+02f) {
-                    return EMG_FLEX;
-                } else {
-                    return EMG_REST;
-                }
-            }
-        } else {
-            if (features[2] <= 1.047375898e+05f) {
-                if (features[0] <= 2.629125061e+02f) {
-                    return EMG_FLEX;
-                } else {
-                    return EMG_FLEX;
-                }
-            } else {
-                return EMG_EXTEND;
-            }
-        }
-    } else {
-        if (features[0] <= 1.129800049e+03f) {
-            if (features[2] <= 4.155788672e+04f) {
-                if (features[2] <= 3.173604004e+04f) {
-                    return EMG_EXTEND;
-                } else {
-                    return EMG_EXTEND;
-                }
-            } else {
-                if (features[3] <= 1.286000000e+03f) {
-                    return EMG_FLEX;
-                } else {
-                    return EMG_EXTEND;
-                }
-            }
-        } else {
-            if (features[3] <= 2.030000000e+03f) {
-                if (features[3] <= 1.284000000e+03f) {
-                    return EMG_EXTEND;
-                } else {
-                    return EMG_EXTEND;
-                }
-            } else {
-                if (features[3] <= 2.695500000e+03f) {
-                    return EMG_EXTEND;
-                } else {
-                    return EMG_EXTEND;
-                }
-            }
-        }
+    return value > 0.0f ? value : 0.0f;
+}
+
+emg_class_t emg_model_predict(
+    const float features[EMG_FEATURE_COUNT],
+    const float baseline_mv[2])
+{
+    if (features == 0 || baseline_mv == 0) return EMG_UNKNOWN;
+
+    // The initial classifier uses the two channel means above baseline.
+    // All eight features are available for a trained model later.
+    float emg0 = positive(features[0] - baseline_mv[0]);
+    float emg1 = positive(features[4] - baseline_mv[1]);
+
+    if (emg0 <= REST_MAX_DELTA_MV &&
+        emg1 <= REST_MAX_DELTA_MV) {
+        return EMG_REST;
     }
+
+    if (emg0 >= TENSE_MIN_DELTA_MV &&
+        emg1 >= TENSE_MIN_DELTA_MV &&
+        emg0 >= emg1 * TENSE_BALANCE_RATIO &&
+        emg1 >= emg0 * TENSE_BALANCE_RATIO) {
+        return EMG_TENSE;
+    }
+
+    if (emg0 >= ACTION_MIN_DELTA_MV &&
+        emg0 >= emg1 * DOMINANCE_RATIO +
+                DOMINANCE_MARGIN_MV) {
+        return EMG_EXTEND;
+    }
+
+    if (emg1 >= ACTION_MIN_DELTA_MV &&
+        emg1 >= emg0 * DOMINANCE_RATIO +
+                DOMINANCE_MARGIN_MV) {
+        return EMG_FLEX;
+    }
+
+    return EMG_UNKNOWN;
 }

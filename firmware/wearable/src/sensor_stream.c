@@ -138,12 +138,10 @@ static void acquisition_thread(
 
                 LOG_INF("SWIPE DETECTED: %s", name);
             }
-            // Feed every valid EMG0 sample to the classifier.
-            // Runs at the acquisition rate of 100 Hz.
+            // Feed both EMG channels at the acquisition rate.
             emg_inference_push(
-                frame.emg.mv[0],
-                frame.sequence,
-                frame.timestamp_ms
+                frame.emg.mv[0], frame.emg.mv[1],
+                frame.sequence, frame.timestamp_ms
             );
 
             k_mutex_lock(&latest_lock, K_FOREVER);
@@ -170,6 +168,7 @@ static void acquisition_thread(
         } else {
             atomic_inc(&read_errors);
             orientation_invalidate(&gate);
+            emg_inference_invalidate();
             // Never expose a previously valid frame after a read error.
             k_mutex_lock(&latest_lock, K_FOREVER);
             latest_valid = false;

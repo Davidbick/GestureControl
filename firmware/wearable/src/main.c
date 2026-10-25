@@ -10,7 +10,6 @@
 #include "ble.h"
 #include "myo_ble.h"
 #include "sensor_stream.h"
-#include "brightness.h"
 #include "emg_inference.h"
 #include "gesture_engine.h"
 #include "myo_ble_client.h"
@@ -29,11 +28,11 @@ static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 // Orientation gate owned by acquisition thread.
-static struct brightness_estimator brightness;
 static struct gesture_engine gesture_control;
 
-#define BRIGHTNESS_CAL_SAMPLES 40
-#define BRIGHTNESS_CAL_INTERVAL_MS 50
+#define EMG_BASELINE_SAMPLES 40
+#define EMG_BASELINE_INTERVAL_MS 50
+#define EMG_BASELINE_TIMEOUT_MS 5000
 
 static void blink_work_handler(struct k_work *work);
 
@@ -52,39 +51,43 @@ static void blink_work_handler(struct k_work *work)
 }
 
 
-static int capture_emg0_average_mv(int32_t *average_mv)
+static int capture_emg_baseline(int32_t baseline_mv[2])
 {
-    int64_t sum = 0;
-    int count = 0;
+    if (baseline_mv == NULL) return -EINVAL;
 
+    int64_t sum[2] = {0, 0};
+    uint32_t count = 0;
     uint32_t last_sequence = UINT32_MAX;
-    int64_t deadline = k_uptime_get() + 5000;
+    int64_t deadline = k_uptime_get() + EMG_BASELINE_TIMEOUT_MS;
 
-    while (count < BRIGHTNESS_CAL_SAMPLES &&
+    while (count < EMG_BASELINE_SAMPLES &&
            k_uptime_get() < deadline) {
-
         struct sensor_frame frame;
 
         if (sensor_stream_latest(&frame) == 0 &&
             frame.sequence != last_sequence) {
-
             last_sequence = frame.sequence;
-            sum += frame.emg.mv[0];
+            int32_t emg0 = frame.emg.mv[0];
+            int32_t emg1 = frame.emg.mv[1];
+
+            if (emg0 < 0 || emg0 > 3300 ||
+                emg1 < 0 || emg1 > 3300) {
+                return -EINVAL;
+            }
+            sum[0] += emg0;
+            sum[1] += emg1;
             count++;
         }
 
-        k_msleep(BRIGHTNESS_CAL_INTERVAL_MS);
+        k_msleep(EMG_BASELINE_INTERVAL_MS);
     }
 
-    if (count != BRIGHTNESS_CAL_SAMPLES) {
-        LOG_ERR("EMG calibration failed: %d samples", count);
-        return -1;
-    }
+    if (count != EMG_BASELINE_SAMPLES) return -EAGAIN;
 
-    *average_mv = (int32_t)(sum / count);
+    baseline_mv[0] = (int32_t)(sum[0] / EMG_BASELINE_SAMPLES);
+    baseline_mv[1] = (int32_t)(sum[1] / EMG_BASELINE_SAMPLES);
     return 0;
 }
-
 
 static int capture_startup_reference(
     struct imu_accel_sample *reference)
@@ -200,61 +203,35 @@ int main(void)
         return 0;
     }
         
-    // Brightness calibration uses EMG0.
-    // Keep the arm in its calibrated control orientation.
+    // Rest-only calibration supports four discrete EMG classes.
+    int32_t rest_mv[2] = {0, 0};
+    bool emg_calibrated = false;
 
-    int32_t rest_mv = 0;
-    int32_t extended_mv = 0;
-    bool brightness_ready = false;
+    for (int attempt = 1; attempt <= 3; attempt++) {
+        LOG_INF("EMG REST CALIBRATION");
+        LOG_INF("Relax your forearm completely.");
+        LOG_INF("Starting in 2 seconds.");
+        k_msleep(2000);
 
-    LOG_INF("BRIGHTNESS CALIBRATION");
-    LOG_INF("Relax your forearm. Starting in 2 seconds.");
-
-    k_msleep(2000);
-
-    int rest_status = capture_emg0_average_mv(&rest_mv);
-
-    if (rest_status == 0) {
-        LOG_INF("Rest baseline: %d mV", rest_mv);
+        int err = capture_emg_baseline(rest_mv);
+        if (err == 0) {
+            emg_calibrated = emg_inference_set_baseline(
+                rest_mv[0], rest_mv[1]);
+            if (emg_calibrated) {
+                LOG_INF("EMG calibrated: EMG0=%d mV, EMG1=%d mV",
+                        rest_mv[0], rest_mv[1]);
+                break;
+            }
+            err = -EINVAL;
+        }
+        LOG_WRN("EMG calibration attempt %d failed: %d", attempt, err);
     }
 
-    LOG_INF("Extend your wrist comfortably.");
-    LOG_INF("Hold steady. Starting in 2 seconds.");
-
-    k_msleep(2000);
-
-    int extend_status =
-        capture_emg0_average_mv(&extended_mv);
-
-    if (extend_status == 0) {
-        LOG_INF("Extension level: %d mV", extended_mv);
+    if (!emg_calibrated) {
+        LOG_ERR("EMG calibration failed; reboot to retry.");
+        LOG_ERR("IMU acquisition and BLE remain active.");
     }
 
-    if (rest_status == 0 &&
-        extend_status == 0 &&
-        extended_mv > rest_mv + 3) {
-
-        brightness_init(
-            &brightness,
-            (float)rest_mv,
-            (float)extended_mv
-        );
-
-        brightness_ready = true;
-
-        LOG_INF("Brightness calibration complete");
-        LOG_INF("Range: %d to %d mV",
-                rest_mv, extended_mv);
-
-    } else {
-        LOG_WRN("Brightness calibration invalid");
-        LOG_WRN("Brightness disabled until reboot");
-        // Existing BLE behavior still continues.
-    }
-
-    uint32_t last_brightness_sequence = UINT32_MAX;
-    bool brightness_adjusting = false;
-    // Ignore gesture events collected during calibration.
     sensor_stream_clear_swipes();
 
     // Start command recognition in the disarmed state.
@@ -268,9 +245,6 @@ int main(void)
     int64_t last_log_ms = 0;
     int64_t last_sensor_warning_ms = 0;
     int last_reported_class = -2;
-    // Brightness transmission state.
-    uint8_t last_brightness_sent = 0xff;
-    bool brightness_was_ready = false;
 
     while (1) {
         struct sensor_frame frame = {0};
@@ -292,37 +266,6 @@ int main(void)
             bool prediction_ready =
                 emg_inference_latest(&predicted_class);
 
-            // Continue dimming through FLEX after EXTEND.
-            // REST or invalid orientation holds brightness.
-            if (!valid ||
-                !prediction_ready ||
-                predicted_class == EMG_REST) {
-
-                brightness_adjusting = false;
-
-            } else if (predicted_class == EMG_EXTEND) {
-
-                brightness_adjusting = true;
-            }
-
-            bool adjusting_brightness =
-                valid && brightness_adjusting;
-
-            if (brightness_ready &&
-                frame.sequence != last_brightness_sequence) {
-
-                brightness_update(
-                    &brightness,
-                    frame.emg.mv[0],
-                    frame.timestamp_ms,
-                    adjusting_brightness
-                );
-
-                last_brightness_sequence = frame.sequence;
-            }
-
-
-            
             int angle = frame.orientation_angle_deg;
 
             // Run command recognition only for fresh sensor data.
@@ -446,6 +389,10 @@ int main(void)
                     gesture = "EXTEND";
                     break;
 
+                case EMG_TENSE:
+                    gesture = "TENSE";
+                    break;
+
                 default:
                     gesture = "UNKNOWN";
                     break;
@@ -461,13 +408,10 @@ int main(void)
                 log_now - last_log_ms >= 100)) {
 
                 LOG_INF(
-                    "EMG0=%d mV | Gesture=%s | "
-                    "Brightness=%u%% | Orientation=%s | Angle=%d",
-                    frame.emg.mv[0],
-                    gesture,
-                    brightness_get(&brightness),
-                    valid ? "VALID" : "INVALID",
-                    angle
+                    "EMG0=%d mV | EMG1=%d mV | Gesture=%s | "
+                    "Orientation=%s | Angle=%d",
+                    frame.emg.mv[0], frame.emg.mv[1], gesture,
+                    valid ? "VALID" : "INVALID", angle
                 );
 
                 last_reported_class = class_code;
@@ -481,15 +425,6 @@ int main(void)
                 last_sensor_warning_ms = warning_now;
             }
 
-            brightness_adjusting = false;
-            if (brightness_ready) {
-                brightness_update(
-                    &brightness,
-                    0,
-                    k_uptime_get_32(),
-                    false
-                );
-            }
         }
         
         uint8_t state = valid ? MYO_VALID : MYO_INVALID;
@@ -505,40 +440,7 @@ int main(void)
             }
         }
                 
-        // Transmit brightness only on a change or when
-        // the brightness characteristic becomes ready.
-        bool brightness_link_ready =
-            myo_ble_client_brightness_ready();
-
-        // Use a safe default if EMG calibration failed.
-        uint8_t current_brightness =
-            brightness_ready
-                ? brightness_get(&brightness)
-                : 50U;
-
-        if (brightness_link_ready &&
-            (!brightness_was_ready ||
-            current_brightness != last_brightness_sent)) {
-
-            int brightness_err =
-                myo_ble_client_send_brightness(
-                    current_brightness
-                );
-
-            if (brightness_err == 0) {
-                last_brightness_sent = current_brightness;
-
-                LOG_INF("BLE TX: BRIGHTNESS=%u%%",
-                        current_brightness);
-            } else {
-                LOG_WRN("Brightness TX failed: %d",
-                        brightness_err);
-            }
-        }
-
-        brightness_was_ready = brightness_link_ready;
-        
-
+        // Light dimming is now a receiver-side mapped gesture action.
         k_msleep(SAMPLE_INTERVAL_MS);
     }
 
