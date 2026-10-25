@@ -1,5 +1,9 @@
+import asyncio
 import importlib.util
+import sys
+import types
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).with_name("ble_config.py")
@@ -102,6 +106,94 @@ class PacketTests(unittest.TestCase):
         self.assertEqual(result["action"], "KEY_TAP")
         self.assertEqual(result["key"], "ENTER")
 
+
+
+class BatchTests(unittest.TestCase):
+    @staticmethod
+    def sample():
+        return {
+            "target": "COMPUTER",
+            "mappings": [
+                {"gesture": "SWIPE_UP", "action": "KEY_TOGGLE", "key": "W"},
+                {"gesture": "SWIPE_DOWN", "action": "KEY_TAP", "key": "S"},
+                {"gesture": "SWIPE_LEFT", "action": "KEY_TAP", "key": "A"},
+                {"gesture": "SWIPE_RIGHT", "action": "KEY_TAP", "key": "D"},
+                {"gesture": "TENSE", "action": "KEY_TAP", "key": "SPACE"},
+            ],
+        }
+
+    def test_build_five_mappings(self):
+        target, requests = ble_config.build_batch(self.sample())
+        self.assertEqual(target, "COMPUTER")
+        self.assertEqual(len(requests), 5)
+        for request in requests:
+            self.assertEqual(len(request["set_packet"]), 12)
+            self.assertEqual(len(request["get_packet"]), 12)
+            self.assertEqual(request["set_packet"][2], 2)
+            self.assertEqual(request["get_packet"][2], 1)
+
+    def test_duplicate_rejected(self):
+        batch = self.sample()
+        batch["mappings"].append(batch["mappings"][0])
+        # Test duplicates without exceeding the maximum batch size.
+        batch["mappings"].pop()
+        batch["mappings"][1] = dict(batch["mappings"][0])
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            ble_config.build_batch(batch)
+
+    def test_invalid_mapping_rejected(self):
+        batch = self.sample()
+        batch["mappings"][-1]["action"] = "LIGHT_TOGGLE"
+        with self.assertRaises(ValueError):
+            ble_config.build_batch(batch)
+
+    def test_empty_batch_rejected(self):
+        with self.assertRaises(ValueError):
+            ble_config.build_batch({"target": "COMPUTER", "mappings": []})
+
+    def test_all_five_verified_one_connection(self):
+        batch = self.sample()
+        calls = {"connect": 0, "writes": 0}
+        current = {}
+
+        class FakeScanner:
+            @staticmethod
+            async def find_device_by_name(name, timeout):
+                return "fake-device"
+
+        class FakeClient:
+            def __init__(self, device, timeout):
+                calls["connect"] += 1
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+            async def write_gatt_char(self, uuid, data, response):
+                calls["writes"] += 1
+                self.request = bytes(data)
+                if data[2] == 2:
+                    current[data[4]] = data[5:11]
+
+            async def read_gatt_char(self, uuid):
+                if uuid == ble_config.UUID_INFO:
+                    return bytes([1, 1, 5, 3])
+                req = self.request
+                mapping = current.get(req[4], bytes(6))
+                return bytes([1, req[1], req[2], 1, req[4], 0]) + mapping
+
+        fake_bleak = types.SimpleNamespace(
+            BleakClient=FakeClient, BleakScanner=FakeScanner
+        )
+        with patch.dict(sys.modules, {"bleak": fake_bleak}):
+            result = asyncio.run(ble_config.execute_batch(batch))
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["verified"], 5)
+        self.assertEqual(calls["connect"], 1)
+        self.assertEqual(calls["writes"], 10)
 
 if __name__ == "__main__":
     unittest.main()

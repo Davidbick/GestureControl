@@ -23,6 +23,17 @@ python laptop/configuration/ble_config.py laptop/configuration/test_reset.json
 
 Use `test_light.json` to configure `MyoLight`.
 
-The target must be advertising and free: put the Wio controller in Gemma mode to release `MyoPC`. If `MyoLight` is currently connected to the wearable, disconnect that connection first. After configuration, disconnect the laptop and return the Wio to Laptop mode to exercise the updated HID mapping.
+## Batch configuration (one BLE connection)
 
-The three function definitions live in `protocol/functiongemma_tools.json`. This client already accepts that function call format, so FunctionGemma can invoke `execute_tool_call()` after parsing and validating its output. Receiver configurations live only in RAM, so they reset after a power cycle.
+Create JSON with `"target": "COMPUTER"` or `"LIGHT"` and a `"mappings"` array of 1 to 5 unique gestures. Each entry has the same parameters as the single SET operation, except `target` is supplied at the top level. See `test_batch.json`.
+
+```sh
+python laptop/configuration/ble_config.py laptop/configuration/test_batch.json --dry-run
+python laptop/configuration/ble_config.py laptop/configuration/test_batch.json
+```
+
+The script validates every entry before connecting, sends SET and GET for each gesture over one BLE link, and verifies the full mapping bytes. It stops on the first unverified operation and reports successes and uncertainty; operations are **not atomic**, and no automatic rollback occurs. The legacy single-command format is unchanged.
+
+With firmware from `added dual-connection receivers`, the target should remain discoverable with the wearable/test controller connected; there is no need to switch the controller to Gemma mode to free MyoPC.
+
+The three function definitions live in `protocol/functiongemma_tools.json`. This client supports the existing single function-call format and the new batch JSON format; FunctionGemma integration can select either route after validating its output. Receiver configurations live only in RAM, so they reset after a power cycle.

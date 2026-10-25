@@ -251,7 +251,7 @@ async def execute_tool_call(call):
     )
     if device is None:
         raise ConnectionError(
-            f"{DEVICES[target]} not found. Disconnect its existing BLE controller first."
+            f"{DEVICES[target]} not found. Check receiver advertising, power, and available connection slots."
         )
 
     async with BleakClient(device, timeout=15.0) as client:
@@ -264,26 +264,196 @@ async def execute_tool_call(call):
         return parse_response(packet, target, response)
 
 
+
+def build_batch(data):
+    """Prevalidate 1-5 SET mappings, with a readback GET for each."""
+    if not isinstance(data, dict) or set(data) != {"target", "mappings"}:
+        raise ValueError("Batch requires exactly target and mappings")
+
+    target = data["target"]
+    mappings = data["mappings"]
+    if not isinstance(target, str) or target not in TARGETS:
+        raise ValueError(f"Unknown target: {target}")
+    if not isinstance(mappings, list) or not 1 <= len(mappings) <= 5:
+        raise ValueError("Batch must contain 1 to 5 mappings")
+
+    seen = set()
+    requests = []
+    for index, mapping in enumerate(mappings, start=1):
+        if not isinstance(mapping, dict) or "target" in mapping:
+            raise ValueError(f"Mapping {index} must be an object without target")
+
+        gesture = mapping.get("gesture")
+        if not isinstance(gesture, str) or gesture not in GESTURES or gesture == "ALL":
+            raise ValueError(f"Mapping {index}: invalid gesture {gesture}")
+        if gesture in seen:
+            raise ValueError(f"Duplicate gesture: {gesture}")
+        seen.add(gesture)
+
+        # Reuse the same checked encoder used by single SET commands.
+        set_call = {
+            "name": "set_gesture_mapping",
+            "arguments": {"target": target, **mapping},
+        }
+        set_packet, _ = build_packet(set_call)
+        get_packet, _ = build_packet({
+            "name": "get_gesture_mapping",
+            "arguments": {"target": target, "gesture": gesture},
+        })
+        requests.append({
+            "gesture": gesture,
+            "set_packet": set_packet,
+            "get_packet": get_packet,
+        })
+
+    return target, requests
+
+
+async def execute_batch(data):
+    """Apply a batch via one BLE connection; verify each mapping with GET."""
+    from bleak import BleakClient, BleakScanner
+
+    target, requests = build_batch(data)  # all-or-nothing validation
+    result = {
+        "target": target,
+        "device": DEVICES[target],
+        "requested": len(requests),
+        "verified": 0,
+        "success": False,
+        "results": [],
+    }
+
+    try:
+        device = await BleakScanner.find_device_by_name(
+            DEVICES[target], timeout=12.0
+        )
+        if device is None:
+            raise ConnectionError(
+                f"{DEVICES[target]} not found. Check receiver power, "
+                "advertising, and available BLE connection slots."
+            )
+
+        async with BleakClient(device, timeout=15.0) as client:
+            info = bytes(await client.read_gatt_char(UUID_INFO))
+            if (
+                len(info) != 4
+                or info[0] != VERSION
+                or info[1] != TARGETS[target]
+            ):
+                raise RuntimeError("Receiver protocol version or target mismatch")
+
+            for index, entry in enumerate(requests, start=1):
+                gesture = entry["gesture"]
+                set_packet = entry["set_packet"]
+                get_packet = entry["get_packet"]
+
+                try:
+                    await client.write_gatt_char(
+                        UUID_COMMAND, set_packet, response=True
+                    )
+                    set_response = bytes(
+                        await client.read_gatt_char(UUID_RESPONSE)
+                    )
+                    parse_response(set_packet, target, set_response)
+
+                    # Wire request bytes 5-10 encode the desired mapping;
+                    # response bytes 6-11 must echo its active value.
+                    expected = set_packet[5:11]
+                    if set_response[6:12] != expected:
+                        raise RuntimeError("SET response mapping mismatch")
+
+                    await client.write_gatt_char(
+                        UUID_COMMAND, get_packet, response=True
+                    )
+                    get_response = bytes(
+                        await client.read_gatt_char(UUID_RESPONSE)
+                    )
+                    readback = parse_response(
+                        get_packet, target, get_response
+                    )
+                    if get_response[6:12] != expected:
+                        raise RuntimeError("GET readback mapping mismatch")
+
+                    result["results"].append({
+                        "gesture": gesture,
+                        "status": "VERIFIED",
+                        "mapping": readback,
+                    })
+                    result["verified"] += 1
+                    print(
+                        f"[{index}/{len(requests)}] {gesture}: VERIFIED",
+                        flush=True,
+                    )
+
+                except Exception as exc:
+                    # A failed write/readback may have changed the receiver.
+                    # Do not claim a rollback or that this gesture is unchanged.
+                    result["results"].append({
+                        "gesture": gesture,
+                        "status": "UNVERIFIED",
+                        "error": str(exc),
+                    })
+                    result["error"] = f"Stopped at {gesture}: {exc}"
+                    print(
+                        f"[{index}/{len(requests)}] {gesture}: UNVERIFIED ({exc})",
+                        flush=True,
+                    )
+                    break
+
+    except Exception as exc:
+        result.setdefault("error", str(exc))
+
+    result["success"] = result["verified"] == result["requested"]
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Run GestureControl configuration tool calls over BLE"
+        description="Run GestureControl configuration commands over BLE"
     )
     parser.add_argument("json_file", type=Path)
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Validate and print wire packet without Bluetooth")
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Validate and print packets without Bluetooth",
+    )
     args = parser.parse_args()
 
-    call = json.loads(args.json_file.read_text(encoding="utf-8"))
+    data = json.loads(args.json_file.read_text(encoding="utf-8"))
+
+    if isinstance(data, dict) and "mappings" in data:
+        if args.dry_run:
+            target, requests = build_batch(data)
+            print(json.dumps({
+                "target": target,
+                "device": DEVICES[target],
+                "count": len(requests),
+                "packets": [
+                    {
+                        "gesture": req["gesture"],
+                        "set_hex": req["set_packet"].hex(" "),
+                        "get_hex": req["get_packet"].hex(" "),
+                    }
+                    for req in requests
+                ],
+            }, indent=2))
+        else:
+            result = asyncio.run(execute_batch(data))
+            print(json.dumps(result, indent=2))
+            if not result["success"]:
+                raise SystemExit(1)
+        return
+
+    # Original one-command format remains supported.
     if args.dry_run:
-        packet, target = build_packet(call)
+        packet, target = build_packet(data)
         print(json.dumps({
             "target": target,
             "device": DEVICES[target],
             "packet_hex": packet.hex(" "),
-            "packet_bytes": list(packet)
+            "packet_bytes": list(packet),
         }, indent=2))
     else:
-        print(json.dumps(asyncio.run(execute_tool_call(call)), indent=2))
+        print(json.dumps(asyncio.run(execute_tool_call(data)), indent=2))
 
 
 if __name__ == "__main__":
