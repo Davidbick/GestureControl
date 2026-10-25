@@ -114,7 +114,6 @@ def prepare():
     DATA.mkdir(exist_ok=True)
     for name, rows in [('train',samples),('heldout',heldout)]:
         (DATA/f'{name}.json').write_text(json.dumps(rows,indent=2)+'\n')
-    (DATA/'tools.json').write_text(json.dumps(tools(),indent=2)+'\n')
     print(f'DATA: {len(samples)} train, {len(heldout)} heldout; all validated',flush=True)
 
 
