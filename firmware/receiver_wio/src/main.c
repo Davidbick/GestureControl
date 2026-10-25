@@ -65,6 +65,27 @@ static atomic_t brightness_pct = ATOMIC_INIT(50);
 static atomic_t brightness_seq_seen;
 static atomic_t last_brightness_seq;
 
+// Encoded latest accepted BLE command packet.
+// Bits 16-23: packet type
+// Bits  8-15: first BLE byte
+// Bits  0-7:  second BLE byte
+// Zero means no command received.
+static atomic_t oled_last_packet;
+
+static void record_oled_packet(
+    enum oled_rx_type type,
+    uint8_t first,
+    uint8_t second)
+{
+    uint32_t packed =
+        ((uint32_t)type << 16) |
+        ((uint32_t)first << 8) |
+        (uint32_t)second;
+
+    atomic_set(&oled_last_packet, (atomic_val_t)packed);
+}
+
+
 // Queue BLE packets for the main thread.
 struct queued_gesture {
     struct myo_gesture_packet packet;
@@ -191,7 +212,12 @@ static ssize_t write_gesture(
         return BT_GATT_ERR(
             BT_ATT_ERR_INSUFFICIENT_RESOURCES);
     }
-
+    // Record actual bytes received over BLE.
+    record_oled_packet(
+        OLED_RX_GESTURE,
+        event.packet.gesture,
+        event.packet.sequence
+    );
     return len;
 }
 
@@ -242,6 +268,12 @@ static ssize_t write_brightness(
     atomic_set(&last_brightness_seq, packet.sequence);
     atomic_set(&brightness_seq_seen, 1);
     atomic_set(&brightness_pct, packet.percent);
+        
+    record_oled_packet(
+        OLED_RX_BRIGHTNESS,
+        packet.percent,
+        packet.sequence
+    );
 
     LOG_INF("BLE RX: BRIGHTNESS=%u%% seq=%u",
             packet.percent,
@@ -327,6 +359,7 @@ static void connected(
     // Begin a new command session.
     atomic_inc(&session_epoch);
     k_msgq_purge(&gesture_queue);
+    atomic_set(&oled_last_packet, 0);
 
     atomic_set(&light_on, 0);
     atomic_set(&rx_valid, 0);
@@ -355,6 +388,7 @@ static void disconnected(
     // Invalidate packets from previous connection.
     atomic_inc(&session_epoch);
     k_msgq_purge(&gesture_queue);
+    atomic_set(&oled_last_packet, 0);
 
     LOG_INF("Disconnected: %u", reason);
 
@@ -469,7 +503,18 @@ int main(void)
     if (oled_err) {
         LOG_WRN("OLED initialization failed: %d", oled_err);
     } else {
-        oled_show(false, false, false, false);
+        struct oled_status initial_status = {
+            .connected = false,
+            .valid = false,
+            .fresh = false,
+            .light_on = false,
+            .brightness = 50,
+            .rx_type = OLED_RX_NONE,
+            .first_byte = 0,
+            .second_byte = 0
+        };
+
+        oled_show(&initial_status);
     }
 
     int err = bt_enable(NULL);
@@ -487,6 +532,8 @@ int main(void)
     bool previous_fresh = false;
     bool previous_output = false;
     int previous_pwm_percent = -1;
+    uint8_t previous_brightness = 255;
+    uint32_t previous_packet = UINT32_MAX;
 
     while (1) {
         // Process all pending gesture commands.
@@ -545,18 +592,42 @@ int main(void)
                         requested_percent);
             }
         }
+                
+        // Show only the most recently accepted gesture
+        // or brightness BLE packet.
+        uint32_t last_packet =
+            (uint32_t)atomic_get(&oled_last_packet);
 
+        uint8_t saved_brightness =
+            (uint8_t)atomic_get(&brightness_pct);
 
-        // Redraw OLED only when visible data changes.
         if (!oled_err &&
             (first_render ||
-             linked != previous_link ||
-             valid != previous_valid ||
-             fresh != previous_fresh ||
-             output_on != previous_output)) {
+            linked != previous_link ||
+            valid != previous_valid ||
+            fresh != previous_fresh ||
+            output_on != previous_output ||
+            saved_brightness != previous_brightness ||
+            last_packet != previous_packet)) {
 
-            int ret = oled_show(
-                linked, valid, fresh, output_on);
+            struct oled_status screen = {
+                .connected = linked,
+                .valid = valid,
+                .fresh = fresh,
+                .light_on = output_on,
+                .brightness = saved_brightness,
+
+                .rx_type = (enum oled_rx_type)
+                    ((last_packet >> 16) & 0xffU),
+
+                .first_byte = (uint8_t)
+                    ((last_packet >> 8) & 0xffU),
+
+                .second_byte = (uint8_t)
+                    (last_packet & 0xffU)
+            };
+
+            int ret = oled_show(&screen);
 
             if (ret) {
                 LOG_WRN("OLED update failed: %d", ret);
@@ -567,10 +638,12 @@ int main(void)
             previous_valid = valid;
             previous_fresh = fresh;
             previous_output = output_on;
+            previous_brightness = saved_brightness;
+            previous_packet = last_packet;
             first_render = false;
         }
-
         k_msleep(50);
+
     }
 
     return 0;
