@@ -119,18 +119,10 @@ static void blink_work_handler(struct k_work *work)
 
     uint32_t phase = k_uptime_get_32() % 1200U;
     bool ready = myo_ble_client_gesture_ready();
-    bool valid = false;
-    struct sensor_frame frame;
-
-    if (sensor_stream_latest(&frame) == 0) {
-        valid = frame.orientation_valid;
-    }
 
     bool on;
     if (!ready) {
         on = phase < 120U; // Single pulse: disconnected
-    } else if (!valid) {
-        on = phase < 500U; // Slow blink: outside gate
     } else if (myo_ble_client_get_mode() == MYO_MODE_LIGHT) {
         on = true;         // Solid: Wio ready
     } else {
@@ -414,8 +406,8 @@ int main(void)
                             (int)pending_swipe);
                 }
 
-                // An outside-gate, five-second TENSE changes receivers.
-                // It is never forwarded as a normal TENSE event.
+                // A five-second TENSE changes receivers in any pose.
+                // A shorter released TENSE remains a normal event.
                 if (gesture_engine_take_mode_switch(
                         &gesture_control)) {
                     LOG_INF("Long TENSE: changing receiver mode");
@@ -499,7 +491,9 @@ int main(void)
 
         }
         
-        uint8_t state = valid ? MYO_VALID : MYO_INVALID;
+        // Validity heartbeat now means fresh sensor data. The
+        // orientation gate remains available for diagnostics only.
+        uint8_t state = ret == 0 ? MYO_VALID : MYO_INVALID;
 
         int64_t now = k_uptime_get();
 

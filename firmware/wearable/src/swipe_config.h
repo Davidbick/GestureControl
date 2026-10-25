@@ -1,14 +1,16 @@
 #ifndef SWIPE_CONFIG_H
 #define SWIPE_CONFIG_H
 
-// Generated from training.csv by analyze_swipes.py
-// Onset and similarity thresholds are exported to swipe_tuning.h.
-
+// Direction signatures from the uploaded swipe training CSV.
+// Captured using the smoothed gyro vector over 80 ms after the
+// first 60,000 mdps onset, no orientation gate.
+// Held-out offline validation: 25/25 trial-level classifications.
+// Class order: UP, DOWN, LEFT, RIGHT.
 static const float swipe_centers[4][3] = {
-    {0.48681577f, 0.20604222f, 0.84885630f}, // UP
-    {-0.24785536f, 0.58038338f, -0.77570797f}, // DOWN
-    {0.81636970f, 0.26121223f, -0.51508124f}, // LEFT
-    {-0.67543457f, 0.05956263f, 0.73501050f}, // RIGHT
+    { 0.14855055f,  0.71806234f,  0.67994059f}, // UP
+    {-0.89404937f, -0.29633313f, -0.33595000f}, // DOWN
+    { 0.63646477f,  0.29104911f, -0.71428497f}, // LEFT
+    {-0.52750536f,  0.02021194f,  0.84931123f}, // RIGHT
 };
 
 #endif

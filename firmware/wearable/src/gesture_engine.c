@@ -71,14 +71,17 @@ enum myo_gesture gesture_engine_update(
         return MYO_GESTURE_NONE;
     }
 
+    // Demo mode: orientation validity remains diagnostic only.
+    // Short TENSE is an action; continuous 5 s TENSE changes modes.
+    (void)orientation_valid;
+
     // Motion temporarily prevents NEW EMG holds, not IMU swipes.
     if (significant_motion) {
         engine->motion_block_until_ms = now_ms + MOTION_SETTLE_MS;
     }
 
-    // Phase 1 swipe acquisition already validates onset in the
-    // shared orientation gate. Swipes work in either receiver mode.
-    // Phase 4 will refine onset/grace, direction and rearming.
+    // The swipe detector applies motion onset, direction and cooldown.
+    // It intentionally does not require an orientation gate for the demo.
     enum myo_gesture swipe_action = swipe_to_gesture(swipe);
 
     if (swipe_action != MYO_GESTURE_NONE &&
@@ -109,11 +112,7 @@ enum myo_gesture gesture_engine_update(
         if (emg_class == EMG_TENSE) {
             engine->tense_last_seen_ms = now_ms;
 
-            // A mode-switch TENSE must remain OUTSIDE the gate.
-            if (orientation_valid) {
-                engine->tense_mode_allowed = false;
-            }
-
+            // A long continuous TENSE changes modes in either pose.
             if (engine->tense_mode_allowed &&
                 (uint32_t)(now_ms - engine->tense_since_ms)
                     >= TENSE_MODE_HOLD_MS) {
@@ -132,8 +131,8 @@ enum myo_gesture gesture_engine_update(
         uint32_t held_ms = engine->tense_last_seen_ms -
                            engine->tense_since_ms;
 
-        // Short TENSE: release to REST after beginning inside gate.
-        // Once started, it may finish outside the orientation gate.
+        // Short TENSE: release to REST after at least 350 ms.
+        // After 5 s, a continuous TENSE switches receiver modes.
         bool short_tense =
             engine->tense_started_in_gate &&
             emg_class == EMG_REST &&
@@ -179,21 +178,17 @@ enum myo_gesture gesture_engine_update(
         engine->tense_since_ms = now_ms;
         engine->tense_last_seen_ms = now_ms;
 
-        // Choose the behavior once, based on the starting gate.
-        engine->tense_started_in_gate = orientation_valid;
-        engine->tense_mode_allowed = !orientation_valid;
+        // Both durations are available in any orientation.
+        // Release after 350 ms = TENSE; continuous 5 s = mode change.
+        engine->tense_started_in_gate = true;
+        engine->tense_mode_allowed = true;
         return MYO_GESTURE_NONE;
     }
 
     if (emg_class == EMG_FLEX ||
         emg_class == EMG_EXTEND) {
-        // Consume even invalid-gate activations; no deferred event
-        // is allowed when the wearer moves back inside the gate.
+        // All normal EMG gestures work regardless of orientation.
         engine->emg_armed = false;
-
-        if (!orientation_valid) {
-            return MYO_GESTURE_NONE;
-        }
 
         engine->cooldown_until_ms = now_ms + ACTION_COOLDOWN_MS;
 

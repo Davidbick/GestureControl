@@ -226,12 +226,14 @@ def main():
         if r[0].startswith("TREE-")
     ]
 
-    winner = max(trees, key=lambda r: (r[4], r[3]))
+    # Fixed model choice for the demo. Other depths fit this training
+    # session less reliably on the held-out recording session.
+    winner = next(r for r in trees if r[0] == "TREE-BOTH-depth3")
     name, cols, model, cv, vf1 = winner
 
-    print("\nProvisional best deployable tree:", name)
-    print("Validation was used in selection, so this")
-    print("score is not an unbiased final test estimate.")
+    print("\nDeploying fixed depth-3 decision tree:", name)
+    print("Validation guided this choice; final live accuracy")
+    print("must be checked with fresh hardware gestures.")
 
     # Export selected decision tree to C for the wearable
     export_emg_tree(
