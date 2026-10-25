@@ -1,4 +1,3 @@
-
 / {
     chosen {
         /delete-property/ zephyr,console;
@@ -10,11 +9,21 @@
 
     hid_dev_0: hid_dev_0 {
         compatible = "zephyr,hid-device";
-        label = "GestureControl HID";
+        label = "GestureControl Keyboard";
 
         protocol-code = "keyboard";
 
         in-report-size = <64>;
+        in-polling-period-us = <1000>;
+    };
+
+    hid_dev_1: hid_dev_1 {
+        compatible = "zephyr,hid-device";
+        label = "GestureControl Mouse";
+
+        protocol-code = "mouse";
+
+        in-report-size = <4>;
         in-polling-period-us = <1000>;
     };
 };
