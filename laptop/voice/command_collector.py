@@ -5,20 +5,20 @@ import time
 from collections.abc import Callable
 
 
-# Text-level wake detection: strict enough not to react to 'Gesture' alone.
+# Accept only 'Hey Gesture' or 'Hey Control' (never 'Hi').
 WAKE_RE = re.compile(
     r"^\s*(?:(?:uh|um|oh|okay|ok)\s*,?\s+)?"
-    r"(?:hi|hey)\s*,?\s+gesture\b[\s,:.!?-]*", re.I
+    r"hey\s*,?\s+(?:gesture|control)\b[\s,:.!?-]*", re.I
 )
-# Suffix only: the word 'Gesture' in the middle is not a completion.
+# A trailing 'Gesture' or 'Control' completes the collection.
 FINISH_RE = re.compile(
-    r"(?:^|[\s,.!?])gesture\b"
+    r"(?:^|[\s,.!?])(?:gesture|control)\b"
     r"(?:[\s,]+(?:do\s+that|that's\s+all|execute|done))?"
     r"[\s.!?]*$",
     re.I,
 )
 CANCEL_RE = re.compile(
-    r"^\s*(?:cancel\s*,?\s*gesture|gesture\s*,?\s*cancel)\s*[.!?]*$",
+    r"^\s*(?:cancel\s*,?\s*(?:gesture|control)|(?:gesture|control)\s*,?\s*cancel)\s*[.!?]*$",
     re.I,
 )
 
@@ -67,7 +67,7 @@ class CommandCollector:
         self.collecting = True
         self.started_at = self.clock()
         self.last_activity_at = self.started_at
-        print('[Voice] Wake detected. Say "Gesture" to finish.')
+        print('[Voice] Wake detected. Say "Gesture" or "Control" to finish.')
 
     def on_partial(self, text: str) -> None:
         """Track activity; partial text is NOT added to the command."""

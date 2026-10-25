@@ -15,7 +15,7 @@ async def main() -> None:
         print("======================================\n", flush=True)
         # The next integration step will pass this complete string
         # to FunctionGemma. For now nothing is executed.
-        print('[Voice] Waiting for "Hi, Gesture"', flush=True)
+        print('[Voice] Waiting for "Hey Gesture" or "Hey Control"', flush=True)
 
     collector = CommandCollector(on_complete=command_ready)
     speech = OfflineSpeech(
@@ -29,7 +29,7 @@ async def main() -> None:
         await asyncio.to_thread(speech.load)
         await asyncio.to_thread(speech.start)
         print("[Speech] Yeti listening continuously")
-        print('[Voice] Waiting for "Hi, Gesture"')
+        print('[Voice] Waiting for "Hey Gesture" or "Hey Control"')
 
         while True:
             await asyncio.sleep(0.2)
