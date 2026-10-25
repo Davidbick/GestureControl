@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -23,6 +24,7 @@ LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
 #define LED_NODE DT_ALIAS(led0)
 #define RX_TIMEOUT_MS 1500U
 #define TENSE_GUARD_MS 250U
+#define ADV_RETRY_MS 250U
 
 static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED_NODE, gpios);
@@ -55,6 +57,7 @@ static int set_red_brightness(uint8_t percent)
 
 // Shared BLE connection state.
 static atomic_t link_up;
+static atomic_t advertising_needed;
 static atomic_t rx_valid;
 static atomic_t last_rx_ms;
 static atomic_t session_epoch;
@@ -331,18 +334,24 @@ static const struct bt_data ad[] = {
         'M', 'y', 'o', 'L', 'i', 'g', 'h', 't'),
 };
 
-static void start_advertising(void)
+static int start_advertising(void)
 {
     int err = bt_le_adv_start(
         BT_LE_ADV_CONN_FAST_1,
         ad, ARRAY_SIZE(ad),
         NULL, 0);
 
-    if (err) {
-        LOG_ERR("Advertising failed: %d", err);
-    } else {
-        LOG_INF("Advertising as MyoLight");
+    if (err == -EALREADY) {
+        return 0;
     }
+
+    if (err) {
+        LOG_WRN("Advertising failed: %d, retrying", err);
+        return err;
+    }
+
+    LOG_INF("Advertising as MyoLight");
+    return 0;
 }
 
 static void connected(
@@ -353,8 +362,11 @@ static void connected(
 
     if (err) {
         LOG_ERR("Connection failed: %u", err);
+        atomic_set(&advertising_needed, 1);
         return;
     }
+
+    atomic_set(&advertising_needed, 0);
 
     // Begin a new command session.
     atomic_inc(&session_epoch);
@@ -392,7 +404,7 @@ static void disconnected(
 
     LOG_INF("Disconnected: %u", reason);
 
-    start_advertising();
+    atomic_set(&advertising_needed, 1);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -524,7 +536,9 @@ int main(void)
         return 0;
     }
 
-    start_advertising();
+    atomic_set(&advertising_needed, 1);
+
+    uint32_t next_adv_retry_ms = 0;
 
     bool first_render = true;
     bool previous_link = false;
@@ -548,6 +562,17 @@ int main(void)
         }
 
         uint32_t now = k_uptime_get_32();
+
+        if (atomic_get(&advertising_needed) &&
+            !atomic_get(&link_up) &&
+            (int32_t)(now - next_adv_retry_ms) >= 0) {
+
+            next_adv_retry_ms = now + ADV_RETRY_MS;
+
+            if (start_advertising() == 0) {
+                atomic_set(&advertising_needed, 0);
+            }
+        }
 
         bool fresh =
             (uint32_t)(now -

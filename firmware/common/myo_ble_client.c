@@ -14,6 +14,8 @@
 
 LOG_MODULE_REGISTER(myo_ble_client, LOG_LEVEL_INF);
 
+#define SCAN_RETRY_MS 250
+
 static struct bt_conn *peer_conn;
 static enum myo_receiver_mode current_mode = MYO_MODE_LIGHT;
 static bool central_enabled = true;
@@ -40,6 +42,15 @@ static struct bt_uuid_128 brightness_uuid =
 static struct bt_gatt_discover_params discover_params;
 
 static int start_scan(void);
+
+static void scan_retry_handler(struct k_work *work)
+{
+    ARG_UNUSED(work);
+
+    start_scan();
+}
+
+K_WORK_DELAYABLE_DEFINE(scan_retry_work, scan_retry_handler);
 
 // GATT discovery
 static uint8_t discover_func(
@@ -259,11 +270,18 @@ static int start_scan(void)
 {
     k_mutex_lock(&ble_lock, K_FOREVER);
 
-    bool allowed =
+    bool wants_scan =
         central_enabled &&
         peer_conn == NULL &&
-        !connecting &&
-        !scan_running;
+        !connecting;
+
+    bool recycling =
+        atomic_get(&central_recycle_pending) != 0;
+
+    bool allowed =
+        wants_scan &&
+        !scan_running &&
+        !recycling;
 
     if (allowed) {
         scan_running = true;
@@ -272,6 +290,12 @@ static int start_scan(void)
     k_mutex_unlock(&ble_lock);
 
     if (!allowed) {
+        if (wants_scan && recycling) {
+            k_work_reschedule(
+                &scan_retry_work,
+                K_MSEC(SCAN_RETRY_MS));
+        }
+
         return 0;
     }
 
@@ -281,10 +305,20 @@ static int start_scan(void)
 
     if (err && err != -EALREADY) {
         k_mutex_lock(&ble_lock, K_FOREVER);
+
         scan_running = false;
+        bool retry = central_enabled;
+
         k_mutex_unlock(&ble_lock);
 
-        LOG_ERR("Scan failed: %d", err);
+        LOG_WRN("Scan failed: %d, retrying", err);
+
+        if (retry) {
+            k_work_reschedule(
+                &scan_retry_work,
+                K_MSEC(SCAN_RETRY_MS));
+        }
+
         return err;
     }
 
@@ -298,11 +332,14 @@ static int start_scan(void)
         err = bt_le_scan_stop();
 
         if (err && err != -EALREADY) {
+            LOG_ERR("Scan stop failed: %d", err);
             return err;
         }
 
         k_mutex_lock(&ble_lock, K_FOREVER);
+
         scan_running = false;
+
         k_mutex_unlock(&ble_lock);
 
         return 0;
@@ -718,6 +755,8 @@ int myo_ble_client_pause(void)
     }
 
     k_mutex_unlock(&ble_lock);
+
+    k_work_cancel_delayable(&scan_retry_work);
 
     if (stop_scan) {
         int err = bt_le_scan_stop();
