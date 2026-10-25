@@ -20,8 +20,11 @@ LOG_MODULE_REGISTER(myo_usb, LOG_LEVEL_INF);
 #define KEYBOARD_REPORT_SIZE 8
 #define MOUSE_REPORT_SIZE 4
 
-#define HID_KEY_ENTER 0x28
-#define MOUSE_STEP 40
+#define HID_KEY_A 0x04
+#define HID_KEY_D 0x07
+
+#define MOUSE_BUTTON_LEFT 0x01
+#define MOUSE_SCROLL_STEP 1
 
 static const uint8_t keyboard_report_desc[] =
     HID_KEYBOARD_REPORT_DESC();
@@ -255,7 +258,8 @@ bool usb_hid_ready(void)
 
 static bool hid_action_ready(enum myo_hid_action action)
 {
-    if (action == MYO_HID_ENTER) {
+    if (action == MYO_HID_LEFT ||
+        action == MYO_HID_RIGHT) {
         return atomic_get(&keyboard_ready) != 0;
     }
 
@@ -324,7 +328,7 @@ static int keyboard_tap(uint8_t key)
     return 0;
 }
 
-static int mouse_move(int8_t dx, int8_t dy)
+static int mouse_scroll(int8_t amount)
 {
     UDC_STATIC_BUF_DEFINE(
         report,
@@ -333,11 +337,8 @@ static int mouse_move(int8_t dx, int8_t dy)
 
     memset(report, 0, sizeof(report));
 
-    // Standard mouse report: buttons, X, Y, wheel.
-    report[0] = 0;
-    report[1] = (uint8_t)dx;
-    report[2] = (uint8_t)dy;
-    report[3] = 0;
+    // Byte 3 contains relative wheel movement.
+    report[3] = (uint8_t)amount;
 
     return send_report(
         mouse_dev,
@@ -346,24 +347,66 @@ static int mouse_move(int8_t dx, int8_t dy)
     );
 }
 
+static int mouse_left_click(void)
+{
+    UDC_STATIC_BUF_DEFINE(
+        report,
+        MOUSE_REPORT_SIZE
+    );
+
+    memset(report, 0, sizeof(report));
+
+    // Press left mouse button.
+    report[0] = MOUSE_BUTTON_LEFT;
+
+    int err = send_report(
+        mouse_dev,
+        report,
+        sizeof(report)
+    );
+
+    if (err) {
+        return err;
+    }
+
+    k_msleep(35);
+
+    // Release left mouse button.
+    memset(report, 0, sizeof(report));
+
+    err = send_report(
+        mouse_dev,
+        report,
+        sizeof(report)
+    );
+
+    if (err) {
+        return err;
+    }
+
+    k_msleep(15);
+
+    return 0;
+}
+
 static int execute_hid_action(
     enum myo_hid_action action)
 {
     switch (action) {
     case MYO_HID_UP:
-        return mouse_move(0, -MOUSE_STEP);
+        return mouse_scroll(MOUSE_SCROLL_STEP);
 
     case MYO_HID_DOWN:
-        return mouse_move(0, MOUSE_STEP);
+        return mouse_scroll(-MOUSE_SCROLL_STEP);
 
     case MYO_HID_LEFT:
-        return mouse_move(-MOUSE_STEP, 0);
+        return keyboard_tap(HID_KEY_A);
 
     case MYO_HID_RIGHT:
-        return mouse_move(MOUSE_STEP, 0);
+        return keyboard_tap(HID_KEY_D);
 
     case MYO_HID_ENTER:
-        return keyboard_tap(HID_KEY_ENTER);
+        return mouse_left_click();
 
     default:
         return -EINVAL;
