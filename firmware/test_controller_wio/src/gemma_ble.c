@@ -203,7 +203,7 @@ int gemma_ble_stop(void)
     bool was_advertising = advertising;
     advertising = false;
 
-    if (was_advertising || host_conn != NULL) {
+    if (host_conn != NULL) {
         atomic_set(&gemma_recycle_pending, 1);
     }
 
