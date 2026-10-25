@@ -1,0 +1,2767 @@
+[
+  {
+    "prompt": "With MyoPC, when I swipe right, press Space.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward hold or release A with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I extend my arm, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe up, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I tense my arm, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an arm tense switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a downward swipe switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an arm tense switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend press the R key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe up, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe down, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a downward swipe start or stop holding Tab.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I extend my arm, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a leftward swipe switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an arm tense start or stop holding R.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a flex gesture switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand hold or release R with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I extend my arm, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an arm tense tap the D key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe right, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I flex my arm, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe right, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe up, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe left, press Enter.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward send one Enter keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe up, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to switch the Q key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe up, toggle holding D.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a downward swipe switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I tense my arm, press R.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up press the A key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe down, press Tab.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an upward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a leftward swipe switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles hold or release E with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to hit Q once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an extend gesture start or stop holding E.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex toggle the hold on Enter for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe left, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to hit A once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to hit Tab once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left toggle the hold on S for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand send one D keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I flex my arm, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture send one Q keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left press the Tab key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe up, press W.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to switch the E key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I tense my arm, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to switch the S key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left send one R keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I extend my arm, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an upward swipe switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an upward swipe switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I flex my arm, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to hit S once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right press the Enter key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe right, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a rightward swipe switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an extend gesture tap the S key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward send one Space keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe up, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I extend my arm, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I tense my arm, toggle holding Tab.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a rightward swipe tap the Q key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a rightward swipe start or stop holding spacebar.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe down, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an extend gesture switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe down, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe right, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I flex my arm, toggle holding Space.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe down, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense press the spacebar key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a leftward swipe start or stop holding Enter.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a flex gesture have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I tense my arm, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a rightward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right hold or release Enter with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a downward swipe tap the R key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I extend my arm, toggle holding Enter.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a rightward swipe switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend toggle the hold on Tab for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture hold or release Space with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an extend gesture switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a leftward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a downward swipe switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe left, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down press the W key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense toggle the hold on W for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right toggle the hold on A for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I flex my arm, press Q.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "Please have flexing my muscles send one S keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a leftward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex press the E key for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an upward swipe switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an arm tense have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an extend gesture switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe down, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a flex gesture switch the lamp on or off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to hit D once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right send one E keypress with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking left to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to hit Enter once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe left, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I extend my arm, press E.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a downward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe down, toggle holding S.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a flex gesture start or stop holding Q.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a leftward swipe tap the E key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to toggle the lamp's power using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an arm tense switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an upward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to switch the D key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make an extend gesture have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating extend disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a flex gesture tap the A key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward hold or release W with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to switch the A key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I flex my arm, turn the light on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I flex my arm, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an extend gesture have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I tense my arm, toggle the light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand clear its assigned action with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left hold or release Tab with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "Please have extending my hand switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to turn off the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right flip the light between on and off for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe left, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an upward swipe tap the spacebar key.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the extend gesture to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an arm tense have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoLight, when I swipe left, turn the light off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe upward switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a rightward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to turn on the lights using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a flex gesture switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a rightward swipe switch the lamp on.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe right, toggle holding W.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like the flex gesture to stop triggering anything using my room light.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the left switch the light off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe to the right clear its assigned action with my keyboard.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe right, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down toggle the hold on D for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking up to switch the Space key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up toggle the hold on Q for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand up power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a leftward swipe switch the lamp off.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking down to switch the R key between held and released using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "Please have a swipe downward switch the light between on and off with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Can activating flex power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my lamp, make a flex gesture have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand right power off the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make a downward swipe have no action.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can a full-arm tense power on the lamp for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I swipe left, toggle holding A.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like flicking right to stop triggering anything using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "I'd like tightening my arm muscles to hit W once using my computer.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "With MyoPC, when I tense my arm, do nothing.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Please have the tense gesture switch the light on with the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "For my laptop, make an upward swipe start or stop holding W.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand down disable that gesture for my PC?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Can moving my hand left disable that gesture for my smart light?",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  }
+]

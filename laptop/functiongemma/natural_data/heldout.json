@@ -1,0 +1,555 @@
+[
+  {
+    "prompt": "If I flick my hand right, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand upwards, the laptop should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform a flex gesture, the laptop should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I flick my hand right.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform a flex gesture, the laptop should tap Tab.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand downwards, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I perform an extend gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to tap S whenever I flick my hand right.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to leave the gesture unmapped whenever I flick my hand right.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand upwards, the laptop should tap E.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform an extend gesture, the laptop should toggle whether D is held down.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I contract my whole arm.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform an extend gesture, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to toggle whether Enter is held down whenever I flick my hand upwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to toggle whether S is held down whenever I perform a flex gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform a flex gesture, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I flick my hand upwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand left, the laptop should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to leave the gesture unmapped whenever I flick my hand downwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to toggle whether Q is held down whenever I contract my whole arm.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand downwards, the laptop should toggle whether spacebar is held down.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "prompt": "If I contract my whole arm, the laptop should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to leave the gesture unmapped whenever I perform an extend gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand upwards, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand left, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to toggle whether R is held down whenever I flick my hand left.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I flick my hand left.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I flick my hand downwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand right, the laptop should toggle whether E is held down.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "E"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I flick my hand upwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I perform an extend gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I flick my hand right.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I contract my whole arm.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to tap Q whenever I flick my hand downwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I flick my hand left.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform an extend gesture, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "If I contract my whole arm, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand upwards, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I flick my hand downwards.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "If I contract my whole arm, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand left, the laptop should tap D.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "prompt": "If I contract my whole arm, the laptop should tap A.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand downwards, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to turn on the lamp whenever I perform a flex gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "prompt": "Using the laptop, I'd like it to tap W whenever I perform an extend gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand left, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "prompt": "Using MyoLight mode, I'd like it to toggle the lamp whenever I perform a flex gesture.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "prompt": "If I flick my hand right, MyoLight mode should leave the gesture unmapped.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "prompt": "If I perform a flex gesture, MyoLight mode should turn off the lamp.",
+    "call": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  }
+]
