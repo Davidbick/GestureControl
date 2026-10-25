@@ -26,8 +26,6 @@ void sensor_stream_start(void);
 // Copy the latest valid sample for other firmware.
 int sensor_stream_latest(struct sensor_frame *sample);
 
-#endif
-
 // One recognized IMU event, including its detection time.
 struct swipe_notification {
     enum swipe_event event;
@@ -41,3 +39,5 @@ bool sensor_stream_pop_swipe(
 // Discard old events, such as swipes detected
 // during startup calibration.
 void sensor_stream_clear_swipes(void);
+
+#endif

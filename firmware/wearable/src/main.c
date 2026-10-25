@@ -272,6 +272,78 @@ int main(void)
             emg_class_t predicted_class;
             bool prediction_ready =
                 emg_inference_latest(&predicted_class);
+            
+            // Run command recognition only for fresh sensor data.
+            uint32_t gesture_now = k_uptime_get_32();
+
+            bool fresh_gesture_frame =
+                frame.sequence != last_gesture_sequence &&
+                (uint32_t)(gesture_now - frame.timestamp_ms) <= 150U;
+
+            if (fresh_gesture_frame) {
+
+                last_gesture_sequence = frame.sequence;
+
+                // Read all pending IMU swipe events.
+                // Ignore events older than 350 ms.
+                struct swipe_notification notification;
+                enum swipe_event pending_swipe = SWIPE_NONE;
+
+                while (sensor_stream_pop_swipe(&notification)) {
+                    if ((uint32_t)(
+                            gesture_now - notification.timestamp_ms
+                        ) <= 350U) {
+
+                        pending_swipe = notification.event;
+                    }
+                }
+
+                // Suppress FLEX candidates during substantial
+                // wrist movement. Raw gyro units are mdps.
+                // 35000 mdps = 35 degrees/second.
+                const int32_t motion_threshold = 35000;
+
+                bool significant_motion =
+                    frame.motion.gyro.x_mdps > motion_threshold ||
+                    frame.motion.gyro.x_mdps < -motion_threshold ||
+                    frame.motion.gyro.y_mdps > motion_threshold ||
+                    frame.motion.gyro.y_mdps < -motion_threshold ||
+                    frame.motion.gyro.z_mdps > motion_threshold ||
+                    frame.motion.gyro.z_mdps < -motion_threshold;
+
+                // Combine orientation, EMG, and IMU into
+                // one actionable gesture.
+                enum myo_gesture action = gesture_engine_update(
+                    &gesture_control,
+                    gesture_now,
+                    valid,
+                    prediction_ready,
+                    prediction_ready ? predicted_class : EMG_REST,
+                    significant_motion,
+                    pending_swipe
+                );
+
+                if (action != MYO_GESTURE_NONE) {
+
+                    // Existing BLE central already supports
+                    // the two-byte gesture packet.
+                    int send_err =
+                        myo_ble_client_send_gesture(action);
+
+                    if (send_err == 0) {
+                        LOG_INF(
+                            "Gesture command sent: %d",
+                            (int)action
+                        );
+                    } else {
+                        LOG_WRN(
+                            "Gesture command %d not sent: %d",
+                            (int)action,
+                            send_err
+                        );
+                    }
+                }
+            }
 
             const char *gesture = "WARMUP";
             int class_code = -1;
