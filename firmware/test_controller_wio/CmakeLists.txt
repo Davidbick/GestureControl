@@ -7,7 +7,6 @@ project(test_controller_wio)
 target_sources(app PRIVATE
     src/main.c
     src/rgb_led.c
-    src/gemma_ble.c
     ../common/myo_ble_client.c
 )
 
