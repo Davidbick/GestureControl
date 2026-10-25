@@ -123,9 +123,9 @@ def build_packet(call):
 
     target = args.get("target")
     gesture = args.get("gesture")
-    if target not in TARGETS:
+    if not isinstance(target, str) or target not in TARGETS:
         raise ValueError(f"Unknown target: {target}")
-    if gesture not in GESTURES:
+    if not isinstance(gesture, str) or gesture not in GESTURES:
         raise ValueError(f"Unknown gesture: {gesture}")
 
     if name == "set_gesture_mapping":
@@ -148,7 +148,7 @@ def build_packet(call):
 
     if operation == 2:
         action_name = args.get("action")
-        if action_name not in ACTIONS:
+        if not isinstance(action_name, str) or action_name not in ACTIONS:
             raise ValueError(f"Unknown action: {action_name}")
         action = ACTIONS[action_name]
 
@@ -173,8 +173,12 @@ def build_packet(call):
                 raise ValueError("KEY_TAP requires key")
             keycode = keycode_for(args["key"])
             specified = args.get("modifiers", [])
-            if not isinstance(specified, list) or len(specified) != len(set(specified)):
-                raise ValueError("modifiers must be a list without duplicates")
+            if (
+                not isinstance(specified, list)
+                or not all(isinstance(m, str) for m in specified)
+                or len(specified) != len(set(specified))
+            ):
+                raise ValueError("modifiers must be a list of unique strings")
             for modifier in specified:
                 if modifier not in MODIFIERS:
                     raise ValueError(f"Unknown modifier: {modifier}")
@@ -245,15 +249,49 @@ def parse_response(request, target, response):
 
 
 async def execute_tool_call(call):
+    """Dispatch a named call to the existing validated BLE configuration API."""
+    if (
+        not isinstance(call, dict)
+        or set(call) != {"name", "arguments"}
+        or not isinstance(call["arguments"], dict)
+    ):
+        raise ValueError("Tool call requires name and arguments")
+
+    name = call["name"]
+    args = call["arguments"]
+
+    # Named batch uses the already-tested one-connection SET/GET executor.
+    if name == "configure_gesture_batch":
+        return await execute_batch(args)
+
+    # A single SET gets identical readback verification to a batch.
+    # Return the original single-mapping format for compatibility.
+    if name == "set_gesture_mapping":
+        batch = {
+            "target": args.get("target"),
+            "mappings": [
+                {key: value for key, value in args.items() if key != "target"}
+            ],
+        }
+        result = await execute_batch(batch)
+        if not result["success"]:
+            raise RuntimeError(
+                result.get("error", "SET could not be verified")
+            )
+        return result["results"][0]["mapping"]
+
+    # GET and RESET use their established protocol operations.
+    packet, target = build_packet(call)
+
     from bleak import BleakClient, BleakScanner
 
-    packet, target = build_packet(call)
     device = await BleakScanner.find_device_by_name(
         DEVICES[target], timeout=12.0
     )
     if device is None:
         raise ConnectionError(
-            f"{DEVICES[target]} not found. Check receiver advertising, power, and available connection slots."
+            f"{DEVICES[target]} not found. Check receiver advertising, "
+            "power, and available connection slots."
         )
 
     async with BleakClient(device, timeout=15.0) as client:
@@ -269,7 +307,6 @@ async def execute_tool_call(call):
         await client.write_gatt_char(UUID_COMMAND, packet, response=True)
         response = bytes(await client.read_gatt_char(UUID_RESPONSE))
         return parse_response(packet, target, response)
-
 
 
 def build_batch(data):
@@ -420,7 +457,10 @@ async def execute_batch(data):
     except Exception as exc:
         result.setdefault("error", str(exc))
 
-    result["success"] = result["verified"] == result["requested"]
+    result["success"] = (
+        result["verified"] == result["requested"]
+        and "error" not in result
+    )
     return result
 
 
@@ -437,10 +477,19 @@ def main():
 
     data = json.loads(args.json_file.read_text(encoding="utf-8"))
 
-    if isinstance(data, dict) and "mappings" in data:
-        if args.dry_run:
-            target, requests = build_batch(data)
-            print(json.dumps({
+    # Preserve the legacy standalone batch JSON format.
+    if isinstance(data, dict) and "mappings" in data and "name" not in data:
+        data = {"name": "configure_gesture_batch", "arguments": data}
+
+    is_batch = (
+        isinstance(data, dict)
+        and data.get("name") == "configure_gesture_batch"
+    )
+
+    if args.dry_run:
+        if is_batch:
+            target, requests = build_batch(data["arguments"])
+            output = {
                 "target": target,
                 "device": DEVICES[target],
                 "count": len(requests),
@@ -452,26 +501,23 @@ def main():
                     }
                     for req in requests
                 ],
-            }, indent=2))
+            }
         else:
-            result = asyncio.run(execute_batch(data))
-            print(json.dumps(result, indent=2))
-            if not result["success"]:
-                raise SystemExit(1)
+            packet, target = build_packet(data)
+            output = {
+                "target": target,
+                "device": DEVICES[target],
+                "packet_hex": packet.hex(" "),
+                "packet_bytes": list(packet),
+            }
+        print(json.dumps(output, indent=2))
         return
 
-    # Original one-command format remains supported.
-    if args.dry_run:
-        packet, target = build_packet(data)
-        print(json.dumps({
-            "target": target,
-            "device": DEVICES[target],
-            "packet_hex": packet.hex(" "),
-            "packet_bytes": list(packet),
-        }, indent=2))
-    else:
-        print(json.dumps(asyncio.run(execute_tool_call(data)), indent=2))
+    result = asyncio.run(execute_tool_call(data))
+    print(json.dumps(result, indent=2))
 
+    if is_batch and not result["success"]:
+        raise SystemExit(1)
 
 if __name__ == "__main__":
     main()

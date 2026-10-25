@@ -45,6 +45,28 @@ Statuses: OK=0, BAD_VERSION=1, WRONG_TARGET=2, INVALID_GESTURE=3, UNSUPPORTED_AC
 
 After writing the command characteristic, read Response and verify version, transaction ID, operation, target, gesture and success status. GET returns the current mapping; SET returns the newly active mapping; RESET returns defaults; RESET_ALL restores all mappings and does not echo an individual mapping.
 
+## Host-side function calls and batches
+
+The laptop accepts four named operations: `set_gesture_mapping`,
+`get_gesture_mapping`, `reset_gesture_mapping`, and
+`configure_gesture_batch`. The last accepts
+`{"target":"COMPUTER","mappings":[{"gesture":"SWIPE_UP","action":"KEY_TOGGLE","key":"W"}]}`
+as its `arguments` value. It supports 1–7 distinct gestures per target.
+Commands covering both COMPUTER and LIGHT require separate batches.
+
+The batch is a **host-side convenience**, not a new BLE operation: it sends
+existing 12-byte SET and GET packets sequentially over one connection. All
+entries are validated before connection; each SET response and independent
+GET readback must match the request. On failure, execution stops and reports
+which mappings were verified and which are uncertain. It is **not atomic**:
+already-applied mappings are not automatically rolled back. Standalone SET
+calls now use this same readback-verified path.
+
+Legacy single-call JSON, and legacy top-level batch JSON, remain accepted.
+Existing receiver firmware and protocol version 1 are unchanged. The current
+wearable still does not classify EXTEND/FLEX; this update only configures
+the actions those future gesture events would trigger.
+
 ## Defaults
 
 | Gesture | Computer | Light |

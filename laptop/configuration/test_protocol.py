@@ -3,7 +3,7 @@ import importlib.util
 import sys
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).with_name("ble_config.py")
@@ -226,6 +226,160 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(result["verified"], 7)
         self.assertEqual(calls["connect"], 1)
         self.assertEqual(calls["writes"], 14)
+
+
+class ToolDispatchTests(unittest.TestCase):
+    def test_named_batch_dispatch(self):
+        batch = BatchTests.sample()
+        expected = {"success": True, "verified": 7, "requested": 7}
+        with patch.object(
+            ble_config, "execute_batch",
+            new_callable=AsyncMock, return_value=expected
+        ) as mock_execute:
+            result = asyncio.run(ble_config.execute_tool_call(
+                call("configure_gesture_batch", **batch)
+            ))
+        self.assertEqual(result, expected)
+        mock_execute.assert_awaited_once_with(batch)
+
+    def test_single_set_uses_verified_batch(self):
+        mapping = {
+            "target": "COMPUTER", "gesture": "SWIPE_UP",
+            "status": "OK", "action": "KEY_TOGGLE", "key": "W",
+        }
+        with patch.object(
+            ble_config, "execute_batch", new_callable=AsyncMock,
+            return_value={
+                "success": True, "results": [
+                    {"status": "VERIFIED", "mapping": mapping}
+                ],
+            },
+        ) as mock_execute:
+            result = asyncio.run(ble_config.execute_tool_call(call(
+                "set_gesture_mapping", target="COMPUTER",
+                gesture="SWIPE_UP", action="KEY_TOGGLE", key="W"
+            )))
+        self.assertEqual(result, mapping)
+        self.assertEqual(
+            mock_execute.await_args.args[0]["mappings"],
+            [{"gesture": "SWIPE_UP", "action": "KEY_TOGGLE", "key": "W"}],
+        )
+
+    def test_single_set_failure(self):
+        with patch.object(
+            ble_config, "execute_batch", new_callable=AsyncMock,
+            return_value={
+                "success": False,
+                "error": "Stopped at TENSE: Readback mismatch",
+            },
+        ):
+            with self.assertRaisesRegex(RuntimeError, "Readback mismatch"):
+                asyncio.run(ble_config.execute_tool_call(call(
+                    "set_gesture_mapping", target="COMPUTER",
+                    gesture="TENSE", action="KEY_TAP", key="SPACE"
+                )))
+
+    def test_invalid_unhashable_values(self):
+        for field in ("target", "gesture", "action"):
+            args = {
+                "target": "COMPUTER", "gesture": "TENSE",
+                "action": "KEY_TAP", "key": "SPACE",
+            }
+            args[field] = []
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                ble_config.build_packet(call("set_gesture_mapping", **args))
+
+        with self.assertRaises(ValueError):
+            ble_config.build_packet(call(
+                "set_gesture_mapping", target="COMPUTER",
+                gesture="TENSE", action="KEY_TAP", key="SPACE",
+                modifiers=[{}],
+            ))
+
+    def test_eight_mapping_batch_rejected(self):
+        batch = BatchTests.sample()
+        batch["mappings"].append({
+            "gesture": "SWIPE_UP", "action": "KEY_TAP", "key": "Q",
+        })
+        with self.assertRaises(ValueError):
+            ble_config.build_batch(batch)
+
+    @staticmethod
+    def _fake_ble(info_gestures=7, fail_on_set=None):
+        """Simulate BLE receiver responses and preserve prior successful writes."""
+        state = {"writes": 0, "current": {}, "connections": 0}
+
+        class FakeScanner:
+            @staticmethod
+            async def find_device_by_name(name, timeout):
+                return "fake-receiver"
+
+        class FakeClient:
+            def __init__(self, device, timeout):
+                state["connections"] += 1
+                self.request = None
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+            async def write_gatt_char(self, uuid, data, response):
+                state["writes"] += 1
+                self.request = bytes(data)
+                if data[2] == 2:
+                    if fail_on_set == data[4]:
+                        raise OSError("Simulated SET timeout")
+                    state["current"][data[4]] = data[5:11]
+
+            async def read_gatt_char(self, uuid):
+                if uuid == ble_config.UUID_INFO:
+                    return bytes([1, 1, info_gestures, 3])
+                req = self.request
+                return (
+                    bytes([1, req[1], req[2], 1, req[4], 0])
+                    + state["current"].get(req[4], bytes(6))
+                )
+
+        return state, types.SimpleNamespace(
+            BleakClient=FakeClient, BleakScanner=FakeScanner
+        )
+
+    def test_older_receiver_rejected_before_writes(self):
+        state, fake_bleak = self._fake_ble(info_gestures=5)
+        with patch.dict(sys.modules, {"bleak": fake_bleak}):
+            result = asyncio.run(ble_config.execute_batch(
+                BatchTests.sample()
+            ))
+        self.assertFalse(result["success"])
+        self.assertEqual(result["verified"], 0)
+        self.assertEqual(state["writes"], 0)
+        self.assertIn("Update receiver firmware", result["error"])
+
+    def test_partial_failure_reports_verified_prefix(self):
+        batch = {
+            "target": "COMPUTER",
+            "mappings": [
+                {"gesture": "SWIPE_UP", "action": "KEY_TAP", "key": "W"},
+                {"gesture": "SWIPE_DOWN", "action": "KEY_TAP", "key": "S"},
+                {"gesture": "TENSE", "action": "KEY_TAP", "key": "SPACE"},
+            ],
+        }
+        state, fake_bleak = self._fake_ble(fail_on_set=2)
+        with patch.dict(sys.modules, {"bleak": fake_bleak}):
+            result = asyncio.run(ble_config.execute_batch(batch))
+        self.assertFalse(result["success"])
+        self.assertEqual(result["verified"], 1)
+        self.assertEqual(
+            [row["status"] for row in result["results"]],
+            ["VERIFIED", "UNVERIFIED"],
+        )
+        self.assertIn(1, state["current"])
+        self.assertNotIn(2, state["current"])
+        self.assertEqual(state["connections"], 1)
+
+
 
 if __name__ == "__main__":
     unittest.main()

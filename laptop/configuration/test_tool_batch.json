@@ -1,0 +1,23 @@
+{
+  "name": "configure_gesture_batch",
+  "arguments": {
+    "target": "COMPUTER",
+    "mappings": [
+      {
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "W"
+      },
+      {
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "A"
+      },
+      {
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "SPACE"
+      }
+    ]
+  }
+}
