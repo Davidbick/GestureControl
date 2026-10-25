@@ -2,17 +2,14 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <math.h>
 
-#define REST_CONFIRM_MS       350U
-#define FLEX_HOLD_MS         1100U
-#define MODE_HOLD_MS         5000U
-#define SWIPE_GATE_HOLD_MS   3000U
-#define CENTER_STABLE_MS      250U
-#define CENTER_COS_THRESHOLD  0.9659258f
-#define FLEX_RELEASE_GRACE_MS 200U
-#define MOTION_BLOCK_MS       650U
-#define ACTION_COOLDOWN_MS    400U
+#define REST_CONFIRM_MS          350U
+#define TENSE_SHORT_MIN_MS       350U
+#define TENSE_MODE_HOLD_MS      5000U
+#define TENSE_RELEASE_GRACE_MS   250U
+#define TENSE_MISSING_ABORT_MS   600U
+#define MOTION_SETTLE_MS         200U
+#define ACTION_COOLDOWN_MS       350U
 
 static bool before_deadline(uint32_t now, uint32_t deadline)
 {
@@ -35,68 +32,6 @@ static enum myo_gesture swipe_to_gesture(enum swipe_event swipe)
     }
 }
 
-// Acceleration gives a gravity-relative hand orientation.
-// Yaw around the gravity axis cannot be measured from this vector.
-static bool near_swipe_center(
-    const struct gesture_engine *engine,
-    const struct imu_accel_sample *accel)
-{
-    if (!engine->swipe_center_valid || accel == NULL) {
-        return false;
-    }
-
-    float x = (float)accel->x_mg;
-    float y = (float)accel->y_mg;
-    float z = (float)accel->z_mg;
-    float cx = (float)engine->swipe_center.x_mg;
-    float cy = (float)engine->swipe_center.y_mg;
-    float cz = (float)engine->swipe_center.z_mg;
-
-    float magnitude_squared = x * x + y * y + z * z;
-    float center_squared = cx * cx + cy * cy + cz * cz;
-
-    // Ignore samples dominated by acceleration from movement.
-    if (magnitude_squared < 800.0f * 800.0f ||
-        magnitude_squared > 1200.0f * 1200.0f ||
-        center_squared < 1.0f) {
-        return false;
-    }
-
-    float dot = x * cx + y * cy + z * cz;
-
-    // Within 15 degrees of the orientation saved at activation.
-    return dot >= CENTER_COS_THRESHOLD *
-        sqrtf(magnitude_squared * center_squared);
-}
-
-static void update_swipe_rearm(
-    struct gesture_engine *engine,
-    uint32_t now_ms,
-    const struct imu_accel_sample *accel,
-    bool significant_motion)
-{
-    if (!engine->swipe_enabled || engine->swipe_ready) {
-        return;
-    }
-
-    if (significant_motion || !near_swipe_center(engine, accel)) {
-        engine->center_tracking = false;
-        return;
-    }
-
-    if (!engine->center_tracking) {
-        engine->center_tracking = true;
-        engine->center_since_ms = now_ms;
-        return;
-    }
-
-    if ((uint32_t)(now_ms - engine->center_since_ms) >=
-        CENTER_STABLE_MS) {
-        engine->swipe_ready = true;
-        engine->center_tracking = false;
-    }
-}
-
 void gesture_engine_init(struct gesture_engine *engine)
 {
     if (engine == NULL) {
@@ -104,20 +39,31 @@ void gesture_engine_init(struct gesture_engine *engine)
     }
 
     memset(engine, 0, sizeof(*engine));
+    // An intentional 350 ms REST is required before an EMG event.
+    engine->emg_armed = false;
+}
 
-    // Start disarmed. A stable REST is required
-    // before SELECT can be emitted.
-    engine->select_armed = false;
+void gesture_engine_abort(struct gesture_engine *engine)
+{
+    if (engine == NULL) {
+        return;
+    }
+
+    // Never complete a partially observed hold after sensor loss.
+    engine->emg_armed = false;
+    engine->rest_tracking = false;
+    engine->tense_tracking = false;
+    engine->tense_started_in_gate = false;
+    engine->tense_mode_allowed = false;
+    engine->mode_switch_pending = false;
 }
 
 enum myo_gesture gesture_engine_update(
     struct gesture_engine *engine,
     uint32_t now_ms,
     bool orientation_valid,
-    bool computer_mode,
     bool emg_ready,
     emg_class_t emg_class,
-    const struct imu_accel_sample *accel,
     bool significant_motion,
     enum swipe_event swipe)
 {
@@ -125,202 +71,141 @@ enum myo_gesture gesture_engine_update(
         return MYO_GESTURE_NONE;
     }
 
-    // Any significant angular motion interrupts
-    // an ongoing FLEX candidate.
+    // Motion temporarily prevents NEW EMG holds, not IMU swipes.
     if (significant_motion) {
-        engine->motion_block_until_ms =
-            now_ms + MOTION_BLOCK_MS;
-
-        engine->flex_tracking = false;
-        engine->select_orientation_ok = false;
+        engine->motion_block_until_ms = now_ms + MOTION_SETTLE_MS;
     }
 
-    // Only enable laptop arrows after a deliberate 3-second FLEX.
-    // After each accepted swipe, returning near the saved center
-    // for 250 ms is required before another arrow key can be sent.
-    update_swipe_rearm(engine, now_ms, accel, significant_motion);
+    // Phase 1 swipe acquisition already validates onset in the
+    // shared orientation gate. Swipes work in either receiver mode.
+    // Phase 4 will refine onset/grace, direction and rearming.
+    enum myo_gesture swipe_action = swipe_to_gesture(swipe);
 
-    if (swipe != SWIPE_NONE) {
-        if (!computer_mode ||
-            !engine->swipe_enabled ||
-            !engine->swipe_ready) {
+    if (swipe_action != MYO_GESTURE_NONE &&
+        !engine->tense_tracking &&
+        !before_deadline(now_ms, engine->cooldown_until_ms)) {
+        engine->emg_armed = false;
+        engine->rest_tracking = false;
+        engine->cooldown_until_ms = now_ms + ACTION_COOLDOWN_MS;
+        return swipe_action;
+    }
+
+    // Unknown / unavailable predictions are not interpreted as
+    // releases. Allow short inference flicker during a TENSE.
+    if (!emg_ready || emg_class == EMG_UNKNOWN) {
+        if (engine->tense_tracking &&
+            (uint32_t)(now_ms - engine->tense_last_seen_ms)
+                < TENSE_MISSING_ABORT_MS) {
             return MYO_GESTURE_NONE;
         }
 
-        engine->swipe_ready = false;
-        engine->center_tracking = false;
-        engine->motion_block_until_ms = now_ms + MOTION_BLOCK_MS;
-        engine->flex_tracking = false;
-        engine->select_orientation_ok = false;
-        engine->rest_tracking = false;
-        engine->select_armed = false;
+        gesture_engine_abort(engine);
+        return MYO_GESTURE_NONE;
+    }
 
-        if (before_deadline(now_ms, engine->cooldown_until_ms)) {
+    // A TENSE is latched to its starting orientation and
+    // cannot switch between action and mode-change semantics.
+    if (engine->tense_tracking) {
+        if (emg_class == EMG_TENSE) {
+            engine->tense_last_seen_ms = now_ms;
+
+            // A mode-switch TENSE must remain OUTSIDE the gate.
+            if (orientation_valid) {
+                engine->tense_mode_allowed = false;
+            }
+
+            if (engine->tense_mode_allowed &&
+                (uint32_t)(now_ms - engine->tense_since_ms)
+                    >= TENSE_MODE_HOLD_MS) {
+                engine->mode_switch_pending = true;
+                engine->tense_tracking = false;
+                engine->cooldown_until_ms = now_ms + ACTION_COOLDOWN_MS;
+            }
+            return MYO_GESTURE_NONE;
+        }
+
+        if ((uint32_t)(now_ms - engine->tense_last_seen_ms)
+            < TENSE_RELEASE_GRACE_MS) {
+            return MYO_GESTURE_NONE;
+        }
+
+        uint32_t held_ms = engine->tense_last_seen_ms -
+                           engine->tense_since_ms;
+
+        // Short TENSE: release to REST after beginning inside gate.
+        // Once started, it may finish outside the orientation gate.
+        bool short_tense =
+            engine->tense_started_in_gate &&
+            emg_class == EMG_REST &&
+            held_ms >= TENSE_SHORT_MIN_MS &&
+            !before_deadline(now_ms, engine->cooldown_until_ms);
+
+        engine->tense_tracking = false;
+        engine->tense_mode_allowed = false;
+        engine->tense_started_in_gate = false;
+
+        if (short_tense) {
+            engine->cooldown_until_ms = now_ms + ACTION_COOLDOWN_MS;
+            return MYO_GESTURE_TENSE;
+        }
+
+        // Interrupted TENSE cannot immediately produce FLEX/EXTEND.
+        return MYO_GESTURE_NONE;
+    }
+
+    // Stable REST is the single EMG rearm action in both modes.
+    if (emg_class == EMG_REST) {
+        if (!engine->rest_tracking) {
+            engine->rest_tracking = true;
+            engine->rest_since_ms = now_ms;
+        } else if ((uint32_t)(now_ms - engine->rest_since_ms)
+                   >= REST_CONFIRM_MS) {
+            engine->emg_armed = true;
+        }
+        return MYO_GESTURE_NONE;
+    }
+
+    engine->rest_tracking = false;
+
+    if (!engine->emg_armed ||
+        before_deadline(now_ms, engine->cooldown_until_ms) ||
+        before_deadline(now_ms, engine->motion_block_until_ms)) {
+        return MYO_GESTURE_NONE;
+    }
+
+    if (emg_class == EMG_TENSE) {
+        engine->emg_armed = false;
+        engine->tense_tracking = true;
+        engine->tense_since_ms = now_ms;
+        engine->tense_last_seen_ms = now_ms;
+
+        // Choose the behavior once, based on the starting gate.
+        engine->tense_started_in_gate = orientation_valid;
+        engine->tense_mode_allowed = !orientation_valid;
+        return MYO_GESTURE_NONE;
+    }
+
+    if (emg_class == EMG_FLEX ||
+        emg_class == EMG_EXTEND) {
+        // Consume even invalid-gate activations; no deferred event
+        // is allowed when the wearer moves back inside the gate.
+        engine->emg_armed = false;
+
+        if (!orientation_valid) {
             return MYO_GESTURE_NONE;
         }
 
         engine->cooldown_until_ms = now_ms + ACTION_COOLDOWN_MS;
-        return swipe_to_gesture(swipe);
-    }
 
-    // Timed FLEX holds work in any arm orientation.
-    // The EMG prediction is still required.
-    if (!emg_ready) {
-        engine->select_armed = false;
-        engine->rest_tracking = false;
-        engine->flex_tracking = false;
-        engine->select_orientation_ok = false;
-        return MYO_GESTURE_NONE;
-    }
-
-    // Only SELECT depends on calibrated orientation.
-    // A lost orientation invalidates the entire short hold,
-    // but does not interrupt a 3- or 5-second FLEX.
-    if (!orientation_valid) {
-        engine->select_armed = false;
-        engine->rest_tracking = false;
-        engine->select_orientation_ok = false;
-    }
-
-    // Wait for wrist movement to settle.
-    if (before_deadline(
-            now_ms, engine->motion_block_until_ms)) {
-
-        engine->rest_tracking = false;
-        engine->flex_tracking = false;
-        engine->select_orientation_ok = false;
-
-        return MYO_GESTURE_NONE;
-    }
-
-
-    // Short FLEX performs SELECT on release; five seconds
-    // changes receiver without sending a SELECT first.
-    if (emg_class == EMG_FLEX) {
-        engine->rest_tracking = false;
-
-        // A mode switch fires once per continuous FLEX.
-        // Wait for release before starting another hold.
-        if (engine->flex_consumed) {
-            engine->flex_last_seen_ms = now_ms;
-            return MYO_GESTURE_NONE;
-        }
-
-        // A long prediction gap breaks the hold.
-        if (engine->flex_tracking &&
-            (uint32_t)(now_ms - engine->flex_last_seen_ms)
-                >= FLEX_RELEASE_GRACE_MS) {
-            engine->flex_tracking = false;
-        }
-
-        if (!engine->flex_tracking) {
-            engine->flex_tracking = true;
-            engine->flex_since_ms = now_ms;
-            engine->flex_last_seen_ms = now_ms;
-            engine->select_orientation_ok =
-                orientation_valid && engine->select_armed;
-            return MYO_GESTURE_NONE;
-        }
-
-        engine->flex_last_seen_ms = now_ms;
-
-        if ((uint32_t)(now_ms - engine->flex_since_ms)
-            >= MODE_HOLD_MS) {
-            engine->mode_switch_pending = true;
-            engine->flex_consumed = true;
-            engine->select_orientation_ok = false;
-            // A receiver change always exits laptop swipe control.
-            engine->swipe_enabled = false;
-            engine->swipe_ready = false;
-            engine->swipe_center_valid = false;
-            engine->center_tracking = false;
-            engine->flex_tracking = false;
-            engine->select_armed = false;
-            engine->rest_tracking = false;
-            engine->cooldown_until_ms =
-                now_ms + ACTION_COOLDOWN_MS;
-        }
-
-        return MYO_GESTURE_NONE;
-    }
-
-    // After a mode switch, require FLEX to be released
-    // for at least the normal classifier grace interval.
-    if (engine->flex_consumed) {
-        if ((uint32_t)(now_ms - engine->flex_last_seen_ms)
-            < FLEX_RELEASE_GRACE_MS) {
-            return MYO_GESTURE_NONE;
-        }
-        engine->flex_consumed = false;
-    }
-
-    // A brief ML flicker should not end an ongoing FLEX.
-    if (engine->flex_tracking) {
-        if ((uint32_t)(now_ms - engine->flex_last_seen_ms)
-            < FLEX_RELEASE_GRACE_MS) {
-            return MYO_GESTURE_NONE;
-        }
-
-        uint32_t held_ms =
-            engine->flex_last_seen_ms - engine->flex_since_ms;
-        engine->flex_tracking = false;
-
-        bool select_allowed =
-            engine->select_orientation_ok && orientation_valid;
-        engine->select_orientation_ok = false;
-
-        // Between 3 and 5 seconds: toggle laptop swipe control
-        // on release so that a 5-second hold changes mode only.
-        if (computer_mode &&
-            held_ms >= SWIPE_GATE_HOLD_MS &&
-            held_ms < MODE_HOLD_MS) {
-            engine->swipe_enabled = !engine->swipe_enabled;
-            engine->swipe_ready = false;
-            engine->center_tracking = false;
-            engine->swipe_center_valid =
-                engine->swipe_enabled && accel != NULL;
-
-            if (engine->swipe_center_valid) {
-                engine->swipe_center = *accel;
-            }
-
-            engine->select_armed = false;
-            engine->cooldown_until_ms =
-                now_ms + ACTION_COOLDOWN_MS;
-            return MYO_GESTURE_NONE;
-        }
-
-        if (held_ms >= FLEX_HOLD_MS &&
-            held_ms < SWIPE_GATE_HOLD_MS &&
-            select_allowed &&
-            !before_deadline(now_ms, engine->cooldown_until_ms)) {
-            engine->select_armed = false;
-            engine->cooldown_until_ms =
-                now_ms + ACTION_COOLDOWN_MS;
-            return MYO_GESTURE_TENSE;
-        }
-    }
-
-    // Stable REST re-arms SELECT and MODE SWITCH.
-    if (emg_class == EMG_REST && orientation_valid) {
-        if (!engine->rest_tracking) {
-            engine->rest_tracking = true;
-            engine->rest_since_ms = now_ms;
-        }
-
-        if ((uint32_t)(now_ms - engine->rest_since_ms)
-            >= REST_CONFIRM_MS) {
-            engine->select_armed = true;
-        }
-    } else {
-        engine->rest_tracking = false;
+        return emg_class == EMG_FLEX
+            ? MYO_GESTURE_FLEX
+            : MYO_GESTURE_EXTEND;
     }
 
     return MYO_GESTURE_NONE;
 }
 
-bool gesture_engine_take_mode_switch(
-    struct gesture_engine *engine)
+bool gesture_engine_take_mode_switch(struct gesture_engine *engine)
 {
     if (engine == NULL || !engine->mode_switch_pending) {
         return false;

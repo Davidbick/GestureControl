@@ -251,9 +251,6 @@ int main(void)
 
         int ret = sensor_stream_latest(&frame);        
 
-        struct imu_accel_sample accel =
-            frame.motion.accel;
-
         bool valid = false;
 
         if (ret == 0) {
@@ -306,45 +303,32 @@ int main(void)
                     frame.motion.gyro.z_mdps > motion_threshold ||
                     frame.motion.gyro.z_mdps < -motion_threshold;
 
-                // Combine orientation, EMG, and IMU into
-                // one actionable gesture.
-                bool swipe_was_enabled =
-                    gesture_control.swipe_enabled;
-                bool swipe_was_ready =
-                    gesture_control.swipe_ready;
-
+                // Interpret all seven discrete gestures. Swipes are active
+                // in either receiver mode; the sensor thread gated onset.
                 enum myo_gesture action = gesture_engine_update(
                     &gesture_control,
                     gesture_now,
                     valid,
-                    myo_ble_client_get_mode() == MYO_MODE_COMPUTER,
                     prediction_ready,
-                    prediction_ready ? predicted_class : EMG_REST,
-                    &accel,
+                    prediction_ready ? predicted_class : EMG_UNKNOWN,
                     significant_motion,
                     pending_swipe
                 );
 
-                if (gesture_control.swipe_enabled !=
-                    swipe_was_enabled) {
-                    // Drop detections captured before the gate toggled.
-                    sensor_stream_clear_swipes();
-                    LOG_INF("Laptop swipe control %s",
-                        gesture_control.swipe_enabled
-                            ? "ENABLED" : "DISABLED");
-                }
-
-                if (!swipe_was_ready &&
-                    gesture_control.swipe_ready) {
-                    LOG_INF("Laptop swipe center ready");
-                }
-
-                // Mode changes are local to the wearable.
+                // An outside-gate, five-second TENSE changes receivers.
+                // It is never forwarded as a normal TENSE event.
                 if (gesture_engine_take_mode_switch(
                         &gesture_control)) {
+                    LOG_INF("Long TENSE: changing receiver mode");
+                    sensor_stream_clear_swipes();
+
                     int mode_err = myo_ble_client_toggle_mode();
                     if (mode_err) {
                         LOG_WRN("Mode switch error: %d", mode_err);
+                    } else {
+                        LOG_INF("Receiver mode: %s",
+                            myo_ble_client_get_mode() == MYO_MODE_LIGHT
+                                ? "LIGHT" : "LAPTOP");
                     }
                 }
 
@@ -418,6 +402,10 @@ int main(void)
                 last_log_ms = log_now;
             }
         } else {
+            // Never complete a hold based on missing/stale samples.
+            gesture_engine_abort(&gesture_control);
+            sensor_stream_clear_swipes();
+
             int64_t warning_now = k_uptime_get();
             if (warning_now - last_sensor_warning_ms >=
                 SENSOR_WARNING_INTERVAL_MS) {
