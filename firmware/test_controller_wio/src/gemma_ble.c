@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -28,6 +29,7 @@ K_MUTEX_DEFINE(gemma_lock);
 static struct bt_conn *host_conn;
 static bool enabled;
 static bool advertising;
+static atomic_t gemma_recycle_pending;
 
 static const uint8_t status_value = 1;
 
@@ -121,6 +123,8 @@ static void gemma_disconnected(
         return;
     }
 
+    atomic_set(&gemma_recycle_pending, 1);
+
     bt_conn_unref(host_conn);
     host_conn = NULL;
 
@@ -129,9 +133,16 @@ static void gemma_disconnected(
     LOG_INF("Gemma laptop disconnected: %u", reason);
 }
 
+static void gemma_recycled(void)
+{
+    atomic_set(&gemma_recycle_pending, 0);
+    LOG_DBG("Gemma connection resources released");
+}
+
 BT_CONN_CB_DEFINE(gemma_callbacks) = {
     .connected = gemma_connected,
     .disconnected = gemma_disconnected,
+    .recycled = gemma_recycled,
 };
 
 int gemma_ble_poll(void)
@@ -141,7 +152,8 @@ int gemma_ble_poll(void)
     bool should_start =
         enabled &&
         !advertising &&
-        host_conn == NULL;
+        host_conn == NULL &&
+        atomic_get(&gemma_recycle_pending) == 0;
 
     if (should_start) {
         advertising = true;
@@ -191,6 +203,10 @@ int gemma_ble_stop(void)
     bool was_advertising = advertising;
     advertising = false;
 
+    if (was_advertising || host_conn != NULL) {
+        atomic_set(&gemma_recycle_pending, 1);
+    }
+
     if (host_conn != NULL) {
         old_conn = bt_conn_ref(host_conn);
     }
@@ -236,7 +252,9 @@ bool gemma_ble_idle(void)
     k_mutex_lock(&gemma_lock, K_FOREVER);
 
     bool idle =
-        host_conn == NULL && !advertising;
+        host_conn == NULL &&
+        !advertising &&
+        atomic_get(&gemma_recycle_pending) == 0;
 
     k_mutex_unlock(&gemma_lock);
 

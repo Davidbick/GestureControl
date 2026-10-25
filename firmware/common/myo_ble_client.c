@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -18,6 +19,7 @@ static enum myo_receiver_mode current_mode = MYO_MODE_LIGHT;
 static bool central_enabled = true;
 static bool scan_running;
 static bool connecting;
+static atomic_t central_recycle_pending;
 
 static uint16_t state_handle;
 static uint16_t gesture_handle;
@@ -163,7 +165,8 @@ static void device_found(
     bool busy =
         !central_enabled ||
         peer_conn != NULL ||
-        connecting;
+        connecting ||
+        atomic_get(&central_recycle_pending) != 0;
 
     enum myo_receiver_mode requested = current_mode;
 
@@ -201,6 +204,7 @@ static void device_found(
         central_enabled &&
         peer_conn == NULL &&
         !connecting &&
+        atomic_get(&central_recycle_pending) == 0 &&
         current_mode == requested;
 
     if (allowed) {
@@ -338,6 +342,7 @@ static void connected(
         k_mutex_lock(&ble_lock, K_FOREVER);
 
         if (peer_conn == conn) {
+            atomic_set(&central_recycle_pending, 1);
             bt_conn_unref(peer_conn);
             peer_conn = NULL;
         }
@@ -408,6 +413,7 @@ static void disconnected(
     brightness_handle = 0;
 
     if (peer_conn == conn) {
+        atomic_set(&central_recycle_pending, 1);
         bt_conn_unref(peer_conn);
         peer_conn = NULL;
     }
@@ -417,9 +423,16 @@ static void disconnected(
     start_scan();
 }
 
+static void central_recycled(void)
+{
+    atomic_set(&central_recycle_pending, 0);
+    LOG_DBG("BLE connection resources released");
+}
+
 BT_CONN_CB_DEFINE(myo_conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
+    .recycled = central_recycled,
 };
 
 int myo_ble_client_init_mode(enum myo_receiver_mode mode)
@@ -700,6 +713,7 @@ int myo_ble_client_pause(void)
     brightness_handle = 0;
 
     if (peer_conn != NULL) {
+        atomic_set(&central_recycle_pending, 1);
         old_conn = bt_conn_ref(peer_conn);
     }
 
@@ -745,7 +759,8 @@ bool myo_ble_client_idle(void)
     bool idle =
         !scan_running &&
         !connecting &&
-        peer_conn == NULL;
+        peer_conn == NULL &&
+        atomic_get(&central_recycle_pending) == 0;
 
     k_mutex_unlock(&ble_lock);
 
@@ -756,7 +771,9 @@ int myo_ble_client_resume_computer(void)
 {
     k_mutex_lock(&ble_lock, K_FOREVER);
 
-    if (peer_conn != NULL || connecting) {
+    if (peer_conn != NULL ||
+        connecting ||
+        atomic_get(&central_recycle_pending) != 0) {
         k_mutex_unlock(&ble_lock);
         return -EBUSY;
     }
