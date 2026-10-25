@@ -342,16 +342,10 @@ static void process_gesture(
     // A classified gesture now owns the actuator.
     atomic_set(&led_mode, LED_MODE_GESTURE);
 
-    int hid_err = 0;
-    switch (gesture) {
-
-    case MYO_GESTURE_TENSE:
-
-        // Prevent accidental rapid TENSE repeats.
+    if (gesture == MYO_GESTURE_TENSE) {
         if (tense_seen &&
             (uint32_t)(event->timestamp_ms -
-                        last_tense_ms) < TENSE_GUARD_MS) {
-
+                       last_tense_ms) < TENSE_GUARD_MS) {
             LOG_INF("TENSE suppressed by cooldown");
             return;
         }
@@ -359,39 +353,12 @@ static void process_gesture(
         tense_seen = true;
         last_tense_ms = event->timestamp_ms;
 
-        // Toggle physical LED.
+        // Preserve the onboard receiver status LED behavior.
         gesture_led_on = !gesture_led_on;
-        LOG_INF("LIGHT: %s",
-                gesture_led_on ? "ON" : "OFF");
-
-        // Send Enter to laptop.
-        hid_err = myo_usb_hid_enqueue(
-            MYO_HID_ENTER);
-        break;
-
-    case MYO_GESTURE_SWIPE_UP:
-        hid_err = myo_usb_hid_enqueue(
-            MYO_HID_UP);
-        break;
-
-    case MYO_GESTURE_SWIPE_DOWN:
-        hid_err = myo_usb_hid_enqueue(
-            MYO_HID_DOWN);
-        break;
-
-    case MYO_GESTURE_SWIPE_LEFT:
-        hid_err = myo_usb_hid_enqueue(
-            MYO_HID_LEFT);
-        break;
-
-    case MYO_GESTURE_SWIPE_RIGHT:
-        hid_err = myo_usb_hid_enqueue(
-            MYO_HID_RIGHT);
-        break;
-
-    default:
-        break;
     }
+
+    struct gc_mapping mapping = gc_config_get(gesture);
+    int hid_err = myo_usb_hid_enqueue(&mapping);
 
     if (hid_err == -ENOTCONN) {
         LOG_DBG("USB not connected, HID skipped");

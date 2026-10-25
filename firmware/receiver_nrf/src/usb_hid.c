@@ -15,22 +15,20 @@
 LOG_MODULE_REGISTER(myo_usb, LOG_LEVEL_INF);
 
 #define MYO_USB_VID 0xCAFE
-#define MYO_USB_PID 0x4014
+#define MYO_USB_PID 0x4015
 
 #define KEYBOARD_REPORT_SIZE 8
 #define MOUSE_REPORT_SIZE 4
 
-#define HID_KEY_A 0x04
-#define HID_KEY_D 0x07
-
-#define MOUSE_BUTTON_LEFT 0x01
-#define MOUSE_SCROLL_STEP 1
+#define MOUSE_BUTTON_LEFT   0x01
+#define MOUSE_BUTTON_RIGHT  0x02
+#define MOUSE_BUTTON_MIDDLE 0x04
 
 static const uint8_t keyboard_report_desc[] =
     HID_KEYBOARD_REPORT_DESC();
 
 static const uint8_t mouse_report_desc[] =
-    HID_MOUSE_REPORT_DESC(2);
+    HID_MOUSE_REPORT_DESC(3);
 
 static const struct device *const keyboard_dev =
     DEVICE_DT_GET(DT_NODELABEL(hid_dev_0));
@@ -70,7 +68,7 @@ static uint32_t idle_ms[4];
 
 K_MSGQ_DEFINE(
     hid_action_queue,
-    sizeof(enum myo_hid_action),
+    sizeof(struct gc_mapping),
     12,
     4
 );
@@ -256,10 +254,13 @@ bool usb_hid_ready(void)
     return atomic_get(&keyboard_ready) != 0;
 }
 
-static bool hid_action_ready(enum myo_hid_action action)
+static bool hid_action_ready(const struct gc_mapping *mapping)
 {
-    if (action == MYO_HID_LEFT ||
-        action == MYO_HID_RIGHT) {
+    if (mapping->action == GC_ACTION_NONE) {
+        return true;
+    }
+
+    if (mapping->action == GC_ACTION_KEY_TAP) {
         return atomic_get(&keyboard_ready) != 0;
     }
 
@@ -288,125 +289,126 @@ static int send_report(
     );
 }
 
-static int keyboard_tap(uint8_t key)
+static int keyboard_tap(uint8_t key,
+                        uint8_t modifiers,
+                        uint16_t duration_ms)
 {
-    UDC_STATIC_BUF_DEFINE(
-        report,
-        KEYBOARD_REPORT_SIZE
-    );
+    UDC_STATIC_BUF_DEFINE(report, KEYBOARD_REPORT_SIZE);
 
     memset(report, 0, sizeof(report));
-
+    report[0] = modifiers;
     report[2] = key;
 
-    int err = send_report(
-        keyboard_dev,
-        report,
-        sizeof(report)
-    );
-
+    int err = send_report(keyboard_dev, report, sizeof(report));
     if (err) {
         return err;
     }
 
-    k_msleep(35);
+    k_msleep(duration_ms);
 
     memset(report, 0, sizeof(report));
-
-    err = send_report(
-        keyboard_dev,
-        report,
-        sizeof(report)
-    );
-
+    err = send_report(keyboard_dev, report, sizeof(report));
     if (err) {
         return err;
     }
 
     k_msleep(15);
-
     return 0;
+}
+
+static int mouse_move(int8_t dx, int8_t dy)
+{
+    UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_SIZE);
+
+    memset(report, 0, sizeof(report));
+    report[1] = (uint8_t)dx;
+    report[2] = (uint8_t)dy;
+
+    return send_report(mouse_dev, report, sizeof(report));
 }
 
 static int mouse_scroll(int8_t amount)
 {
-    UDC_STATIC_BUF_DEFINE(
-        report,
-        MOUSE_REPORT_SIZE
-    );
+    UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_SIZE);
 
     memset(report, 0, sizeof(report));
-
-    // Byte 3 contains relative wheel movement.
     report[3] = (uint8_t)amount;
 
-    return send_report(
-        mouse_dev,
-        report,
-        sizeof(report)
-    );
+    return send_report(mouse_dev, report, sizeof(report));
 }
 
-static int mouse_left_click(void)
+static int mouse_click(uint8_t button,
+                       uint8_t count,
+                       uint16_t duration_ms)
 {
-    UDC_STATIC_BUF_DEFINE(
-        report,
-        MOUSE_REPORT_SIZE
-    );
+    UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_SIZE);
 
-    memset(report, 0, sizeof(report));
+    for (uint8_t i = 0; i < count; i++) {
+        memset(report, 0, sizeof(report));
+        report[0] = button;
 
-    // Press left mouse button.
-    report[0] = MOUSE_BUTTON_LEFT;
+        int err = send_report(mouse_dev, report, sizeof(report));
+        if (err) {
+            return err;
+        }
 
-    int err = send_report(
-        mouse_dev,
-        report,
-        sizeof(report)
-    );
+        k_msleep(duration_ms);
 
-    if (err) {
-        return err;
+        // Release the mouse button after every click.
+        memset(report, 0, sizeof(report));
+        err = send_report(mouse_dev, report, sizeof(report));
+        if (err) {
+            return err;
+        }
+
+        k_msleep(count == 2 && i == 0 ? 80 : 15);
     }
-
-    k_msleep(35);
-
-    // Release left mouse button.
-    memset(report, 0, sizeof(report));
-
-    err = send_report(
-        mouse_dev,
-        report,
-        sizeof(report)
-    );
-
-    if (err) {
-        return err;
-    }
-
-    k_msleep(15);
 
     return 0;
 }
 
-static int execute_hid_action(
-    enum myo_hid_action action)
+static int execute_hid_action(const struct gc_mapping *mapping)
 {
-    switch (action) {
-    case MYO_HID_UP:
-        return mouse_scroll(MOUSE_SCROLL_STEP);
+    int8_t amount = (int8_t)mapping->amount;
 
-    case MYO_HID_DOWN:
-        return mouse_scroll(-MOUSE_SCROLL_STEP);
+    switch (mapping->action) {
+    case GC_ACTION_NONE:
+        return 0;
 
-    case MYO_HID_LEFT:
-        return keyboard_tap(HID_KEY_A);
+    case GC_ACTION_KEY_TAP:
+        return keyboard_tap(mapping->keycode,
+                            mapping->modifiers,
+                            mapping->duration_ms);
 
-    case MYO_HID_RIGHT:
-        return keyboard_tap(HID_KEY_D);
+    case GC_ACTION_MOUSE_LEFT_CLICK:
+        return mouse_click(MOUSE_BUTTON_LEFT, 1, mapping->duration_ms);
 
-    case MYO_HID_ENTER:
-        return mouse_left_click();
+    case GC_ACTION_MOUSE_RIGHT_CLICK:
+        return mouse_click(MOUSE_BUTTON_RIGHT, 1, mapping->duration_ms);
+
+    case GC_ACTION_MOUSE_MIDDLE_CLICK:
+        return mouse_click(MOUSE_BUTTON_MIDDLE, 1, mapping->duration_ms);
+
+    case GC_ACTION_MOUSE_DOUBLE_CLICK:
+        return mouse_click(MOUSE_BUTTON_LEFT, 2, mapping->duration_ms);
+
+    case GC_ACTION_MOUSE_MOVE_UP:
+        return mouse_move(0, -amount);
+
+    case GC_ACTION_MOUSE_MOVE_DOWN:
+        return mouse_move(0, amount);
+
+    case GC_ACTION_MOUSE_MOVE_LEFT:
+        return mouse_move(-amount, 0);
+
+    case GC_ACTION_MOUSE_MOVE_RIGHT:
+        return mouse_move(amount, 0);
+
+    case GC_ACTION_MOUSE_SCROLL_UP:
+        return mouse_scroll(amount);
+
+    case GC_ACTION_MOUSE_SCROLL_DOWN:
+        return mouse_scroll(-amount);
 
     default:
         return -EINVAL;
@@ -423,26 +425,17 @@ static void hid_worker(
     ARG_UNUSED(arg3);
 
     while (1) {
-        enum myo_hid_action action;
+        struct gc_mapping mapping;
 
-        k_msgq_get(
-            &hid_action_queue,
-            &action,
-            K_FOREVER
-        );
+        k_msgq_get(&hid_action_queue, &mapping, K_FOREVER);
 
-        if (!hid_action_ready(action)) {
+        if (!hid_action_ready(&mapping)) {
             continue;
         }
 
-        int err = execute_hid_action(action);
-
+        int err = execute_hid_action(&mapping);
         if (err && err != -ENOTCONN) {
-            LOG_WRN(
-                "HID action %d failed: %d",
-                action,
-                err
-            );
+            LOG_WRN("HID action %u failed: %d", mapping.action, err);
         }
     }
 }
@@ -457,22 +450,21 @@ K_THREAD_DEFINE(
     0
 );
 
-int myo_usb_hid_enqueue(enum myo_hid_action action)
+int myo_usb_hid_enqueue(const struct gc_mapping *mapping)
 {
-    if (action < MYO_HID_UP ||
-        action > MYO_HID_ENTER) {
+    if (mapping == NULL) {
         return -EINVAL;
     }
 
-    if (!hid_action_ready(action)) {
+    if (mapping->action == GC_ACTION_NONE) {
+        return 0;
+    }
+
+    if (!hid_action_ready(mapping)) {
         return -ENOTCONN;
     }
 
-    return k_msgq_put(
-        &hid_action_queue,
-        &action,
-        K_NO_WAIT
-    );
+    return k_msgq_put(&hid_action_queue, mapping, K_NO_WAIT);
 }
 
 int myo_usb_hid_init(void)
