@@ -11,6 +11,7 @@
 #include "myo_ble_client.h"
 #include "myo_ble.h"
 #include "rgb_led.h"
+#include "gemma_ble.h"
 
 LOG_MODULE_REGISTER(wio_controller, LOG_LEVEL_INF);
 
@@ -109,14 +110,49 @@ INPUT_CALLBACK_DEFINE(
     NULL
 );
 
-// Gesture event handling
-static bool key_held[KEY_COUNT];
-static bool armed = true;
-static int64_t last_event_ms = -EVENT_COOLDOWN_MS;
+// -----------------------------------------------------
+// GestureControl mode switching
+// -----------------------------------------------------
 
-static bool all_keys_released(void)
+#define MODE_HOLD_MS 3000
+#define MODE_RETRY_MS 500
+
+enum wio_mode {
+    WIO_MODE_LAPTOP,
+    WIO_MODE_GEMMA
+};
+
+enum mode_phase {
+    MODE_READY,
+    MODE_STOP_OLD,
+    MODE_WAIT_DISCONNECT,
+    MODE_START_NEW
+};
+
+static enum wio_mode current_mode = WIO_MODE_LAPTOP;
+static enum wio_mode requested_mode = WIO_MODE_LAPTOP;
+
+static enum mode_phase mode_phase = MODE_READY;
+
+static int64_t next_mode_retry_ms;
+
+static bool rgb_ready;
+
+// -----------------------------------------------------
+// Trackball button and directional state
+// -----------------------------------------------------
+
+static bool key_held[KEY_COUNT];
+
+static bool direction_armed = true;
+static int64_t last_direction_ms = -EVENT_COOLDOWN_MS;
+
+static int64_t press_started_ms;
+static bool long_press_consumed;
+
+static bool all_directions_released(void)
 {
-    for (int i = 0; i < KEY_COUNT; i++) {
+    for (int i = KEY_UP; i <= KEY_RIGHT; i++) {
         if (key_held[i]) {
             return false;
         }
@@ -125,56 +161,21 @@ static bool all_keys_released(void)
     return true;
 }
 
-static void handle_key_event(const struct key_event *event)
+// Send gesture only in active Laptop mode
+static void send_gesture(int index)
 {
-    int index = key_to_index(event->code);
-
-    if (index < 0) {
+    if (current_mode != WIO_MODE_LAPTOP ||
+        mode_phase != MODE_READY) {
         return;
     }
-
-    // Ignore duplicate key state reports.
-    if (key_held[index] == event->pressed) {
-        return;
-    }
-
-    key_held[index] = event->pressed;
-
-    // A release rearms the controller only when
-    // every direction/button has been released.
-    if (!event->pressed) {
-        if (all_keys_released()) {
-            armed = true;
-        }
-
-        return;
-    }
-
-    // One event per press/release cycle.
-    if (!armed) {
-        return;
-    }
-
-    armed = false;
-
-    int64_t now = k_uptime_get();
-
-    // Prevent several pulses from one rolling motion
-    // from becoming several BLE gesture commands.
-    if (now - last_event_ms < EVENT_COOLDOWN_MS) {
-        LOG_DBG("Trackball event suppressed");
-        return;
-    }
-
-    last_event_ms = now;
-
-    enum myo_gesture gesture = gesture_map[index];
 
     if (!myo_ble_client_gesture_ready()) {
         LOG_WRN("%s ignored: BLE not ready",
                 gesture_names[index]);
         return;
     }
+
+    enum myo_gesture gesture = gesture_map[index];
 
     int err = myo_ble_client_send_gesture(gesture);
 
@@ -187,43 +188,272 @@ static void handle_key_event(const struct key_event *event)
     LOG_INF("Sent: %s", gesture_names[index]);
 }
 
+// Request mode toggle
+static void request_mode_toggle(void)
+{
+    if (mode_phase != MODE_READY) {
+        LOG_WRN("Mode switch already in progress");
+        return;
+    }
+
+    requested_mode =
+        current_mode == WIO_MODE_LAPTOP
+            ? WIO_MODE_GEMMA
+            : WIO_MODE_LAPTOP;
+
+    mode_phase = MODE_STOP_OLD;
+    next_mode_retry_ms = 0;
+
+    LOG_INF("Requested mode: %s",
+        requested_mode == WIO_MODE_GEMMA
+            ? "GEMMA" : "LAPTOP");
+}
+
+// Trackball events
+static void handle_key_event(const struct key_event *event)
+{
+    int index = key_to_index(event->code);
+
+    if (index < 0) {
+        return;
+    }
+
+    // Ignore duplicate press/release reports.
+    if (key_held[index] == event->pressed) {
+        return;
+    }
+
+    key_held[index] = event->pressed;
+
+    int64_t now = k_uptime_get();
+
+    // Center trackball button
+    if (index == KEY_PRESS) {
+
+        if (event->pressed) {
+            press_started_ms = now;
+            long_press_consumed = false;
+            return;
+        }
+
+        // Released after a long hold.
+        if (long_press_consumed) {
+            return;
+        }
+
+        int64_t held_ms = now - press_started_ms;
+
+        if (held_ms >= MODE_HOLD_MS) {
+            long_press_consumed = true;
+            request_mode_toggle();
+            return;
+        }
+
+        // Short press = TENSE in Laptop mode.
+        send_gesture(KEY_PRESS);
+        return;
+    }
+
+    // Directional trackball input
+    if (!event->pressed) {
+        if (all_directions_released()) {
+            direction_armed = true;
+        }
+
+        return;
+    }
+
+    // Only one action per direction press cycle.
+    if (!direction_armed) {
+        return;
+    }
+
+    direction_armed = false;
+
+    // Ignore directional control while center is held.
+    if (key_held[KEY_PRESS]) {
+        return;
+    }
+
+    // Ignore directions outside Laptop mode.
+    if (current_mode != WIO_MODE_LAPTOP ||
+        mode_phase != MODE_READY) {
+        return;
+    }
+
+    if (now - last_direction_ms < EVENT_COOLDOWN_MS) {
+        return;
+    }
+
+    last_direction_ms = now;
+
+    send_gesture(index);
+}
+
+// Detect 3-second hold without waiting for release
+static void poll_button(void)
+{
+    if (!key_held[KEY_PRESS] ||
+        long_press_consumed) {
+        return;
+    }
+
+    int64_t held_ms =
+        k_uptime_get() - press_started_ms;
+
+    if (held_ms >= MODE_HOLD_MS) {
+        long_press_consumed = true;
+
+        LOG_INF("Long press detected");
+
+        request_mode_toggle();
+    }
+}
+
+// Execute safe Bluetooth handoffs
+static void poll_mode_switch(void)
+{
+    if (mode_phase == MODE_READY) {
+
+        // If the laptop disconnects during Gemma mode,
+        // advertise again so it can reconnect.
+        if (current_mode == WIO_MODE_GEMMA) {
+            gemma_ble_poll();
+        }
+
+        return;
+    }
+
+    int64_t now = k_uptime_get();
+
+    if (now < next_mode_retry_ms) {
+        return;
+    }
+
+    int err = 0;
+
+    // Stop the previous Bluetooth role first.
+    if (mode_phase == MODE_STOP_OLD) {
+
+        if (current_mode == WIO_MODE_LAPTOP) {
+            err = myo_ble_client_pause();
+        } else {
+            err = gemma_ble_stop();
+        }
+
+        if (err) {
+            LOG_ERR("BLE stop failed: %d", err);
+            next_mode_retry_ms = now + MODE_RETRY_MS;
+            return;
+        }
+
+        mode_phase = MODE_WAIT_DISCONNECT;
+    }
+
+    // Wait until the previous connection is gone.
+    if (mode_phase == MODE_WAIT_DISCONNECT) {
+
+        bool idle =
+            current_mode == WIO_MODE_LAPTOP
+                ? myo_ble_client_idle()
+                : gemma_ble_idle();
+
+        if (!idle) {
+            return;
+        }
+
+        mode_phase = MODE_START_NEW;
+    }
+
+    // Start the requested Bluetooth role.
+    if (mode_phase == MODE_START_NEW) {
+
+        if (requested_mode == WIO_MODE_GEMMA) {
+            err = gemma_ble_start();
+        } else {
+            err = myo_ble_client_resume_computer();
+        }
+
+        if (err) {
+            LOG_ERR("BLE mode start failed: %d", err);
+            next_mode_retry_ms = now + MODE_RETRY_MS;
+            return;
+        }
+
+        current_mode = requested_mode;
+        mode_phase = MODE_READY;
+
+        // OFF = Laptop, ON = Gemma.
+        if (rgb_ready) {
+
+            uint8_t brightness =
+                current_mode == WIO_MODE_GEMMA
+                    ? 100U : 0U;
+
+            int led_err = wio_rgb_set_channel(
+                WIO_RGB_PIN_29,
+                brightness);
+
+            if (led_err) {
+                LOG_ERR("Mode LED failed: %d", led_err);
+            }
+        }
+
+        LOG_INF("MODE ACTIVE: %s",
+            current_mode == WIO_MODE_GEMMA
+                ? "GEMMA" : "LAPTOP");
+    }
+}
+
 int main(void)
 {
-    LOG_INF("GestureControl Wio test controller");
+    LOG_INF("GestureControl Wio controller starting");
 
     if (!device_is_ready(trackball)) {
-        LOG_ERR("Trackball input device not ready");
+        LOG_ERR("Trackball not ready");
         return 0;
     }
 
-    /* Boot-only hardware test: finishes with all RGB channels OFF.
-     * BLE and trackball behavior is otherwise unchanged. */
+    // Configure RGB outputs.
     int rgb_err = wio_rgb_init();
 
     if (rgb_err) {
-        LOG_ERR("RGB initialization failed: %d", rgb_err);
+        LOG_ERR("RGB init failed: %d", rgb_err);
     } else {
-        rgb_err = wio_rgb_self_test();
-        if (rgb_err) {
-            LOG_ERR("RGB self-test failed: %d", rgb_err);
-        }
+        rgb_ready = true;
+
+        // Laptop is the default mode.
+        wio_rgb_set_channel(WIO_RGB_PIN_29, 0);
     }
 
-    int err = myo_ble_client_init();
+    // Start in Laptop mode, scanning for MyoPC.
+    int err = myo_ble_client_init_mode(
+        MYO_MODE_COMPUTER);
 
     if (err) {
         LOG_ERR("BLE initialization failed: %d", err);
         return 0;
     }
 
-    LOG_INF("Trackball controller ready");
+    LOG_INF("Default mode: LAPTOP");
+    LOG_INF("Hold center button for 3 seconds to switch");
 
     while (1) {
+
         struct key_event event;
 
-        if (k_msgq_get(&key_queue, &event, K_FOREVER) == 0) {
+        // Check for input, but wake periodically
+        // to process a held button and BLE transitions.
+        if (k_msgq_get(
+                &key_queue,
+                &event,
+                K_MSEC(25)) == 0) {
+
             handle_key_event(&event);
         }
+
+        poll_button();
+        poll_mode_switch();
     }
 
     return 0;

@@ -15,6 +15,9 @@ LOG_MODULE_REGISTER(myo_ble_client, LOG_LEVEL_INF);
 
 static struct bt_conn *peer_conn;
 static enum myo_receiver_mode current_mode = MYO_MODE_LIGHT;
+static bool central_enabled = true;
+static bool scan_running;
+static bool connecting;
 
 static uint16_t state_handle;
 static uint16_t gesture_handle;
@@ -34,10 +37,9 @@ static struct bt_uuid_128 brightness_uuid =
 
 static struct bt_gatt_discover_params discover_params;
 
-static void start_scan(void);
+static int start_scan(void);
 
 // GATT discovery
-
 static uint8_t discover_func(
     struct bt_conn *conn,
     const struct bt_gatt_attr *attr,
@@ -157,8 +159,14 @@ static void device_found(
     }
 
     k_mutex_lock(&ble_lock, K_FOREVER);
-    bool busy = peer_conn != NULL;
+
+    bool busy =
+        !central_enabled ||
+        peer_conn != NULL ||
+        connecting;
+
     enum myo_receiver_mode requested = current_mode;
+
     k_mutex_unlock(&ble_lock);
 
     if (busy) {
@@ -166,7 +174,8 @@ static void device_found(
     }
 
     const char *target_name =
-        requested == MYO_MODE_LIGHT ? "MyoLight" : "MyoPC";
+        requested == MYO_MODE_LIGHT
+            ? "MyoLight" : "MyoPC";
 
     struct advertisement_match match = {
         .service_found = false,
@@ -175,16 +184,8 @@ static void device_found(
     };
 
     bt_data_parse(ad, match_target_ad, &match);
-    if (!match.service_found || !match.name_found) {
-        return;
-    }
 
-    // The mode may have changed while parsing the packet.
-    k_mutex_lock(&ble_lock, K_FOREVER);
-    bool still_selected =
-        requested == current_mode && peer_conn == NULL;
-    k_mutex_unlock(&ble_lock);
-    if (!still_selected) {
+    if (!match.service_found || !match.name_found) {
         return;
     }
 
@@ -192,12 +193,48 @@ static void device_found(
         return;
     }
 
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    scan_running = false;
+
+    bool allowed =
+        central_enabled &&
+        peer_conn == NULL &&
+        !connecting &&
+        current_mode == requested;
+
+    if (allowed) {
+        connecting = true;
+    }
+
+    k_mutex_unlock(&ble_lock);
+
+    if (!allowed) {
+        start_scan();
+        return;
+    }
+
     struct bt_conn *conn = NULL;
+
     int err = bt_conn_le_create(
         addr,
         BT_CONN_LE_CREATE_CONN,
         BT_LE_CONN_PARAM_DEFAULT,
         &conn);
+
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    connecting = false;
+
+    if (!err) {
+        peer_conn = conn;
+    }
+
+    bool still_allowed =
+        central_enabled &&
+        current_mode == requested;
+
+    k_mutex_unlock(&ble_lock);
 
     if (err) {
         LOG_ERR("Connection request failed: %d", err);
@@ -205,28 +242,70 @@ static void device_found(
         return;
     }
 
-    k_mutex_lock(&ble_lock, K_FOREVER);
-    peer_conn = conn;
-    k_mutex_unlock(&ble_lock);
+    if (!still_allowed) {
+        bt_conn_disconnect(
+            conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+        return;
+    }
 
     LOG_INF("Connecting to %s", target_name);
 }
 
-static void start_scan(void)
+static int start_scan(void)
 {
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    bool allowed =
+        central_enabled &&
+        peer_conn == NULL &&
+        !connecting &&
+        !scan_running;
+
+    if (allowed) {
+        scan_running = true;
+    }
+
+    k_mutex_unlock(&ble_lock);
+
+    if (!allowed) {
+        return 0;
+    }
+
     int err = bt_le_scan_start(
         BT_LE_SCAN_PASSIVE,
         device_found);
 
-    if (err == -EALREADY) {
-        return;
+    if (err && err != -EALREADY) {
+        k_mutex_lock(&ble_lock, K_FOREVER);
+        scan_running = false;
+        k_mutex_unlock(&ble_lock);
+
+        LOG_ERR("Scan failed: %d", err);
+        return err;
     }
 
-    if (err) {
-        LOG_ERR("Scan failed: %d", err);
-    } else {
-        LOG_INF("Scanning for receiver");
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    bool must_stop = !central_enabled;
+
+    k_mutex_unlock(&ble_lock);
+
+    if (must_stop) {
+        err = bt_le_scan_stop();
+
+        if (err && err != -EALREADY) {
+            return err;
+        }
+
+        k_mutex_lock(&ble_lock, K_FOREVER);
+        scan_running = false;
+        k_mutex_unlock(&ble_lock);
+
+        return 0;
     }
+
+    LOG_INF("Scanning for receiver");
+    return 0;
 }
 
 // Connection callbacks
@@ -234,6 +313,25 @@ static void connected(
     struct bt_conn *conn,
     uint8_t err)
 {
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    bool ours = peer_conn == conn;
+    bool active = central_enabled;
+
+    k_mutex_unlock(&ble_lock);
+
+    // Ignore inbound Gemma peripheral connections.
+    if (!ours) {
+        return;
+    }
+
+    // A mode switch might have happened during connect.
+    if (!err && !active) {
+        bt_conn_disconnect(
+            conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+        return;
+    }
+
     if (err) {
         LOG_ERR("BLE connection failed: %u", err);
 
@@ -291,6 +389,16 @@ static void disconnected(
     struct bt_conn *conn,
     uint8_t reason)
 {
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    bool ours = peer_conn == conn;
+
+    k_mutex_unlock(&ble_lock);
+
+    if (!ours) {
+        return;
+    }
+
     LOG_INF("BLE disconnected: %u", reason);
 
     k_mutex_lock(&ble_lock, K_FOREVER);
@@ -314,9 +422,22 @@ BT_CONN_CB_DEFINE(myo_conn_callbacks) = {
     .disconnected = disconnected,
 };
 
-// Public initialization
-int myo_ble_client_init(void)
+int myo_ble_client_init_mode(enum myo_receiver_mode mode)
 {
+    if (mode != MYO_MODE_LIGHT &&
+        mode != MYO_MODE_COMPUTER) {
+        return -EINVAL;
+    }
+
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    current_mode = mode;
+    central_enabled = true;
+    scan_running = false;
+    connecting = false;
+
+    k_mutex_unlock(&ble_lock);
+
     int err = bt_enable(NULL);
 
     if (err) {
@@ -326,9 +447,13 @@ int myo_ble_client_init(void)
 
     LOG_INF("Bluetooth initialized");
 
-    start_scan();
+    return start_scan();
+}
 
-    return 0;
+// Existing wearable behavior remains LIGHT by default.
+int myo_ble_client_init(void)
+{
+    return myo_ble_client_init_mode(MYO_MODE_LIGHT);
 }
 
 enum myo_write_target {
@@ -557,4 +682,91 @@ int myo_ble_client_toggle_mode(void)
     }
 
     return 0;
+}
+
+int myo_ble_client_pause(void)
+{
+    struct bt_conn *old_conn = NULL;
+
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    central_enabled = false;
+
+    bool stop_scan = scan_running;
+
+    // Prevent further gesture writes during handoff.
+    state_handle = 0;
+    gesture_handle = 0;
+    brightness_handle = 0;
+
+    if (peer_conn != NULL) {
+        old_conn = bt_conn_ref(peer_conn);
+    }
+
+    k_mutex_unlock(&ble_lock);
+
+    if (stop_scan) {
+        int err = bt_le_scan_stop();
+
+        if (err && err != -EALREADY) {
+            if (old_conn) {
+                bt_conn_unref(old_conn);
+            }
+            return err;
+        }
+
+        k_mutex_lock(&ble_lock, K_FOREVER);
+        scan_running = false;
+        k_mutex_unlock(&ble_lock);
+    }
+
+    if (old_conn != NULL) {
+        int err = bt_conn_disconnect(
+            old_conn,
+            BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+        bt_conn_unref(old_conn);
+
+        if (err &&
+            err != -ENOTCONN &&
+            err != -EALREADY) {
+            return err;
+        }
+    }
+
+    LOG_INF("Central BLE paused");
+    return 0;
+}
+
+bool myo_ble_client_idle(void)
+{
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    bool idle =
+        !scan_running &&
+        !connecting &&
+        peer_conn == NULL;
+
+    k_mutex_unlock(&ble_lock);
+
+    return idle;
+}
+
+int myo_ble_client_resume_computer(void)
+{
+    k_mutex_lock(&ble_lock, K_FOREVER);
+
+    if (peer_conn != NULL || connecting) {
+        k_mutex_unlock(&ble_lock);
+        return -EBUSY;
+    }
+
+    current_mode = MYO_MODE_COMPUTER;
+    central_enabled = true;
+
+    k_mutex_unlock(&ble_lock);
+
+    LOG_INF("Resuming MyoPC connection");
+
+    return start_scan();
 }

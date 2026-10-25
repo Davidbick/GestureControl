@@ -36,4 +36,15 @@ int myo_ble_client_toggle_mode(void);
 // Thread-safe selected receiver mode, independent of connection state.
 enum myo_receiver_mode myo_ble_client_get_mode(void);
 
+// Initialize directly in Computer mode instead of Light.
+int myo_ble_client_init_mode(enum myo_receiver_mode mode);
+
+// Stop searching and disconnect from the receiver.
+int myo_ble_client_pause(void);
+
+// True when scanning and receiver connection have stopped.
+bool myo_ble_client_idle(void);
+
+// Resume the central/client role targeting MyoPC.
+int myo_ble_client_resume_computer(void);
 #endif
