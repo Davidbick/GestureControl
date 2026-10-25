@@ -33,4 +33,7 @@ enum myo_receiver_mode {
 // Disconnect and connect to the other receiver type.
 int myo_ble_client_toggle_mode(void);
 
+// Thread-safe selected receiver mode, independent of connection state.
+enum myo_receiver_mode myo_ble_client_get_mode(void);
+
 #endif

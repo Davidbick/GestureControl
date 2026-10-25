@@ -509,6 +509,14 @@ bool myo_ble_client_brightness_ready(void)
     return ready;
 }
 
+enum myo_receiver_mode myo_ble_client_get_mode(void)
+{
+    k_mutex_lock(&ble_lock, K_FOREVER);
+    enum myo_receiver_mode mode = current_mode;
+    k_mutex_unlock(&ble_lock);
+    return mode;
+}
+
 int myo_ble_client_toggle_mode(void)
 {
     struct bt_conn *old_conn = NULL;

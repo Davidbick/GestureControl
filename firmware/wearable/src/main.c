@@ -344,6 +344,7 @@ int main(void)
                     &gesture_control,
                     gesture_now,
                     valid,
+                    myo_ble_client_get_mode() == MYO_MODE_COMPUTER,
                     prediction_ready,
                     prediction_ready ? predicted_class : EMG_REST,
                     &accel,

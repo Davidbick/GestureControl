@@ -114,6 +114,7 @@ enum myo_gesture gesture_engine_update(
     struct gesture_engine *engine,
     uint32_t now_ms,
     bool orientation_valid,
+    bool computer_mode,
     bool emg_ready,
     emg_class_t emg_class,
     const struct imu_accel_sample *accel,
@@ -131,6 +132,7 @@ enum myo_gesture gesture_engine_update(
             now_ms + MOTION_BLOCK_MS;
 
         engine->flex_tracking = false;
+        engine->select_orientation_ok = false;
     }
 
     // Only enable laptop arrows after a deliberate 3-second FLEX.
@@ -139,7 +141,9 @@ enum myo_gesture gesture_engine_update(
     update_swipe_rearm(engine, now_ms, accel, significant_motion);
 
     if (swipe != SWIPE_NONE) {
-        if (!engine->swipe_enabled || !engine->swipe_ready) {
+        if (!computer_mode ||
+            !engine->swipe_enabled ||
+            !engine->swipe_ready) {
             return MYO_GESTURE_NONE;
         }
 
@@ -147,6 +151,7 @@ enum myo_gesture gesture_engine_update(
         engine->center_tracking = false;
         engine->motion_block_until_ms = now_ms + MOTION_BLOCK_MS;
         engine->flex_tracking = false;
+        engine->select_orientation_ok = false;
         engine->rest_tracking = false;
         engine->select_armed = false;
 
@@ -158,15 +163,23 @@ enum myo_gesture gesture_engine_update(
         return swipe_to_gesture(swipe);
     }
 
-    // New EMG commands require an actively valid
-    // orientation and a valid ML prediction.
-    if (!orientation_valid || !emg_ready) {
-
+    // Timed FLEX holds work in any arm orientation.
+    // The EMG prediction is still required.
+    if (!emg_ready) {
         engine->select_armed = false;
         engine->rest_tracking = false;
         engine->flex_tracking = false;
-
+        engine->select_orientation_ok = false;
         return MYO_GESTURE_NONE;
+    }
+
+    // Only SELECT depends on calibrated orientation.
+    // A lost orientation invalidates the entire short hold,
+    // but does not interrupt a 3- or 5-second FLEX.
+    if (!orientation_valid) {
+        engine->select_armed = false;
+        engine->rest_tracking = false;
+        engine->select_orientation_ok = false;
     }
 
     // Wait for wrist movement to settle.
@@ -175,6 +188,7 @@ enum myo_gesture gesture_engine_update(
 
         engine->rest_tracking = false;
         engine->flex_tracking = false;
+        engine->select_orientation_ok = false;
 
         return MYO_GESTURE_NONE;
     }
@@ -185,8 +199,10 @@ enum myo_gesture gesture_engine_update(
     if (emg_class == EMG_FLEX) {
         engine->rest_tracking = false;
 
-        if (!engine->select_armed) {
-            engine->flex_tracking = false;
+        // A mode switch fires once per continuous FLEX.
+        // Wait for release before starting another hold.
+        if (engine->flex_consumed) {
+            engine->flex_last_seen_ms = now_ms;
             return MYO_GESTURE_NONE;
         }
 
@@ -201,6 +217,8 @@ enum myo_gesture gesture_engine_update(
             engine->flex_tracking = true;
             engine->flex_since_ms = now_ms;
             engine->flex_last_seen_ms = now_ms;
+            engine->select_orientation_ok =
+                orientation_valid && engine->select_armed;
             return MYO_GESTURE_NONE;
         }
 
@@ -209,6 +227,8 @@ enum myo_gesture gesture_engine_update(
         if ((uint32_t)(now_ms - engine->flex_since_ms)
             >= MODE_HOLD_MS) {
             engine->mode_switch_pending = true;
+            engine->flex_consumed = true;
+            engine->select_orientation_ok = false;
             // A receiver change always exits laptop swipe control.
             engine->swipe_enabled = false;
             engine->swipe_ready = false;
@@ -224,6 +244,16 @@ enum myo_gesture gesture_engine_update(
         return MYO_GESTURE_NONE;
     }
 
+    // After a mode switch, require FLEX to be released
+    // for at least the normal classifier grace interval.
+    if (engine->flex_consumed) {
+        if ((uint32_t)(now_ms - engine->flex_last_seen_ms)
+            < FLEX_RELEASE_GRACE_MS) {
+            return MYO_GESTURE_NONE;
+        }
+        engine->flex_consumed = false;
+    }
+
     // A brief ML flicker should not end an ongoing FLEX.
     if (engine->flex_tracking) {
         if ((uint32_t)(now_ms - engine->flex_last_seen_ms)
@@ -235,9 +265,15 @@ enum myo_gesture gesture_engine_update(
             engine->flex_last_seen_ms - engine->flex_since_ms;
         engine->flex_tracking = false;
 
+        bool select_allowed =
+            engine->select_orientation_ok && orientation_valid;
+        engine->select_orientation_ok = false;
+
         // Between 3 and 5 seconds: toggle laptop swipe control
         // on release so that a 5-second hold changes mode only.
-        if (held_ms >= SWIPE_GATE_HOLD_MS) {
+        if (computer_mode &&
+            held_ms >= SWIPE_GATE_HOLD_MS &&
+            held_ms < MODE_HOLD_MS) {
             engine->swipe_enabled = !engine->swipe_enabled;
             engine->swipe_ready = false;
             engine->center_tracking = false;
@@ -255,6 +291,8 @@ enum myo_gesture gesture_engine_update(
         }
 
         if (held_ms >= FLEX_HOLD_MS &&
+            held_ms < SWIPE_GATE_HOLD_MS &&
+            select_allowed &&
             !before_deadline(now_ms, engine->cooldown_until_ms)) {
             engine->select_armed = false;
             engine->cooldown_until_ms =
@@ -264,7 +302,7 @@ enum myo_gesture gesture_engine_update(
     }
 
     // Stable REST re-arms SELECT and MODE SWITCH.
-    if (emg_class == EMG_REST) {
+    if (emg_class == EMG_REST && orientation_valid) {
         if (!engine->rest_tracking) {
             engine->rest_tracking = true;
             engine->rest_since_ms = now_ms;
