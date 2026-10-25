@@ -1,0 +1,725 @@
+[
+  {
+    "id": "P01",
+    "kind": "mapping",
+    "prompt": "On MyoPC, a quick upwards sweep should type the letter W one time.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TAP",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "id": "P02",
+    "kind": "mapping",
+    "prompt": "In a game on my PC, moving my wrist sharply toward the ceiling should latch the W key, and repeating it should let go.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "KEY_TOGGLE",
+        "key": "W"
+      }
+    }
+  },
+  {
+    "id": "P03",
+    "kind": "mapping",
+    "prompt": "Cancel whatever my upward hand sweep does on the computer.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P04",
+    "kind": "mapping",
+    "prompt": "A short upward wrist sweep needs to illuminate my MyoLight lamp.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P05",
+    "kind": "mapping",
+    "prompt": "On the smart lamp, a swift motion of my hand toward the ceiling should extinguish it.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P06",
+    "kind": "mapping",
+    "prompt": "I'd like the MyoLight to alternate between lit and unlit each time my hand sweeps upward.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P07",
+    "kind": "mapping",
+    "prompt": "For MyoLight, unassign the command linked to sweeping my wrist upward.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_UP",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P08",
+    "kind": "mapping",
+    "prompt": "Make a fast downward sweep of my hand send a single S keystroke to MyoPC.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TAP",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "id": "P09",
+    "kind": "mapping",
+    "prompt": "For my laptop, pulling my hand downward should alternate between holding S and releasing S.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "KEY_TOGGLE",
+        "key": "S"
+      }
+    }
+  },
+  {
+    "id": "P10",
+    "kind": "mapping",
+    "prompt": "I don't want my downward hand sweep controlling any computer key anymore.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P11",
+    "kind": "mapping",
+    "prompt": "The lights should come alive when my hand moves rapidly toward the floor in MyoLight mode.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P12",
+    "kind": "mapping",
+    "prompt": "With MyoLight selected, a downward sweep should kill the room lamp.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P13",
+    "kind": "mapping",
+    "prompt": "Use a short downward hand motion as the on-off switch for MyoLight.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P14",
+    "kind": "mapping",
+    "prompt": "Remove the MyoLight binding for a downward sweep; it shouldn't trigger an action.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_DOWN",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P15",
+    "kind": "mapping",
+    "prompt": "When I wave my hand quickly toward my left, put one A into the computer.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TAP",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "id": "P16",
+    "kind": "mapping",
+    "prompt": "A quick sweep toward the left on my gaming PC should lock the A key down until I repeat the motion.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "KEY_TOGGLE",
+        "key": "A"
+      }
+    }
+  },
+  {
+    "id": "P17",
+    "kind": "mapping",
+    "prompt": "For the laptop, detach the action associated with sweeping my hand to the left.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P18",
+    "kind": "mapping",
+    "prompt": "Illuminate the smart lamp whenever my hand makes a sharp motion toward the left.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P19",
+    "kind": "mapping",
+    "prompt": "I'd like moving my hand quickly toward my left to black out MyoLight.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P20",
+    "kind": "mapping",
+    "prompt": "Make a left-going hand flick act like pressing the MyoLight power switch each time.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P21",
+    "kind": "mapping",
+    "prompt": "Clear the light's command for the leftward hand movement.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_LEFT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P22",
+    "kind": "mapping",
+    "prompt": "A little hand sweep toward my right should give my keyboard one D keypress.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TAP",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "id": "P23",
+    "kind": "mapping",
+    "prompt": "On MyoPC, let a quick rightward motion pin D down; doing it again should release D.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "KEY_TOGGLE",
+        "key": "D"
+      }
+    }
+  },
+  {
+    "id": "P24",
+    "kind": "mapping",
+    "prompt": "Please erase the computer shortcut that's triggered by my rightward sweep.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P25",
+    "kind": "mapping",
+    "prompt": "A sharp motion of my wrist toward the right should light up my desk lamp in MyoLight.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P26",
+    "kind": "mapping",
+    "prompt": "For the room lamp, hand sweeping to my right should put it into the off state.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P27",
+    "kind": "mapping",
+    "prompt": "Every right-going swipe should invert whether my smart light has power.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P28",
+    "kind": "mapping",
+    "prompt": "Take away the MyoLight command for the sideways motion toward my right.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "SWIPE_RIGHT",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P29",
+    "kind": "mapping",
+    "prompt": "When I stiffen all the muscles in my forearm together, type Q once on MyoPC.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TAP",
+        "key": "Q"
+      }
+    }
+  },
+  {
+    "id": "P30",
+    "kind": "mapping",
+    "prompt": "For my gaming laptop, fully tightening the whole forearm should keep R pressed until my next full-forearm tighten.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "KEY_TOGGLE",
+        "key": "R"
+      }
+    }
+  },
+  {
+    "id": "P31",
+    "kind": "mapping",
+    "prompt": "Deactivate the MyoPC shortcut for contracting all my forearm muscles at once.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P32",
+    "kind": "mapping",
+    "prompt": "The lamp should switch on when I deliberately tense my entire forearm together.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P33",
+    "kind": "mapping",
+    "prompt": "If I make all the muscles of my forearm go rigid simultaneously, switch off MyoLight.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P34",
+    "kind": "mapping",
+    "prompt": "Let a whole-forearm squeeze reverse the on/off state of the smart lamp.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P35",
+    "kind": "mapping",
+    "prompt": "For MyoLight, disconnect the full forearm muscle-tensing command.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "TENSE",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P36",
+    "kind": "mapping",
+    "prompt": "On the computer, making a fist while bending my wrist inward should hit Space one time.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TAP",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "id": "P37",
+    "kind": "mapping",
+    "prompt": "Curling my wrist toward my inner forearm as I close my fist should switch the Enter key between held and released on MyoPC.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "KEY_TOGGLE",
+        "key": "ENTER"
+      }
+    }
+  },
+  {
+    "id": "P38",
+    "kind": "mapping",
+    "prompt": "Remove the MyoPC control activated by closing my fist and curling my wrist in.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P39",
+    "kind": "mapping",
+    "prompt": "As I curl my wrist inward into a fist, make the MyoLight lamp glow.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P40",
+    "kind": "mapping",
+    "prompt": "Closing my hand tightly and bending it in toward the inside of my arm should shut off the smart light.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P41",
+    "kind": "mapping",
+    "prompt": "Make that inward wrist curl with a clenched fist flip the lamp power state.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P42",
+    "kind": "mapping",
+    "prompt": "Stop the room lamp from doing anything when I make a fist and bend my wrist inward.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "FLEX",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P43",
+    "kind": "mapping",
+    "prompt": "When I bend my wrist backward, lifting my palm toward my forearm, press Tab once on my laptop.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TAP",
+        "key": "TAB"
+      }
+    }
+  },
+  {
+    "id": "P44",
+    "kind": "mapping",
+    "prompt": "On MyoPC, arching my hand back at the wrist should latch Space and unlatch it the next time.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "KEY_TOGGLE",
+        "key": "SPACE"
+      }
+    }
+  },
+  {
+    "id": "P45",
+    "kind": "mapping",
+    "prompt": "Delete the computer binding for bending my hand sharply back at the wrist.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "COMPUTER",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "P46",
+    "kind": "mapping",
+    "prompt": "When my palm tilts backward almost perpendicular to my arm, light up MyoLight.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_ON"
+      }
+    }
+  },
+  {
+    "id": "P47",
+    "kind": "mapping",
+    "prompt": "Shut down the desk light if I pull my wrist backward into an extension.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_OFF"
+      }
+    }
+  },
+  {
+    "id": "P48",
+    "kind": "mapping",
+    "prompt": "For MyoLight, treat tilting my wrist way back as a light-switch press.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "LIGHT_TOGGLE"
+      }
+    }
+  },
+  {
+    "id": "P49",
+    "kind": "mapping",
+    "prompt": "Unmap the lamp command that's connected to cocking my wrist backward.",
+    "expected": {
+      "name": "map_gesture",
+      "arguments": {
+        "target": "LIGHT",
+        "gesture": "EXTEND",
+        "action": "NONE"
+      }
+    }
+  },
+  {
+    "id": "N01",
+    "kind": "unsupported",
+    "prompt": "Make a left swipe perform something cool.",
+    "reason": "missing_action"
+  },
+  {
+    "id": "N02",
+    "kind": "unsupported",
+    "prompt": "Please change what happens on MyoPC when I gesture.",
+    "reason": "missing_gesture_and_action"
+  },
+  {
+    "id": "N03",
+    "kind": "unsupported",
+    "prompt": "Whenever I swipe up, have it press W.",
+    "reason": "missing_target"
+  },
+  {
+    "id": "N04",
+    "kind": "unsupported",
+    "prompt": "Make the lamp turn on when I gesture.",
+    "reason": "missing_gesture"
+  },
+  {
+    "id": "N05",
+    "kind": "unsupported",
+    "prompt": "For MyoPC, set an upward swipe to both tap A and hold D.",
+    "reason": "multiple_actions"
+  },
+  {
+    "id": "N06",
+    "kind": "unsupported",
+    "prompt": "For MyoLight, a swipe left should switch the lamp on and switch it off at the same time.",
+    "reason": "contradictory_actions"
+  },
+  {
+    "id": "N07",
+    "kind": "unsupported",
+    "prompt": "When I snap my fingers, make the light turn on.",
+    "reason": "unsupported_gesture"
+  },
+  {
+    "id": "N08",
+    "kind": "unsupported",
+    "prompt": "Have my computer rotate the screen when I tense my forearm.",
+    "reason": "unsupported_action"
+  },
+  {
+    "id": "N09",
+    "kind": "unsupported",
+    "prompt": "Set the lamp to purple when I sweep my hand right.",
+    "reason": "unsupported_light_color"
+  },
+  {
+    "id": "N10",
+    "kind": "unsupported",
+    "prompt": "For MyoLight, dim the lamp to 30 percent when I bend my wrist back.",
+    "reason": "unsupported_brightness_in_simplified_tool"
+  },
+  {
+    "id": "N11",
+    "kind": "unsupported",
+    "prompt": "If I make a fist, please open Minecraft on the computer.",
+    "reason": "unsupported_app_launch"
+  },
+  {
+    "id": "N12",
+    "kind": "unsupported",
+    "prompt": "Make a leftward swipe turn the light on and a rightward swipe turn it off, both in one command.",
+    "reason": "requires_two_calls"
+  }
+]
