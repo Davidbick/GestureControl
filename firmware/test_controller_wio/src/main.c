@@ -10,6 +10,7 @@
 
 #include "myo_ble_client.h"
 #include "myo_ble.h"
+#include "rgb_led.h"
 
 LOG_MODULE_REGISTER(wio_controller, LOG_LEVEL_INF);
 
@@ -193,6 +194,19 @@ int main(void)
     if (!device_is_ready(trackball)) {
         LOG_ERR("Trackball input device not ready");
         return 0;
+    }
+
+    /* Boot-only hardware test: finishes with all RGB channels OFF.
+     * BLE and trackball behavior is otherwise unchanged. */
+    int rgb_err = wio_rgb_init();
+
+    if (rgb_err) {
+        LOG_ERR("RGB initialization failed: %d", rgb_err);
+    } else {
+        rgb_err = wio_rgb_self_test();
+        if (rgb_err) {
+            LOG_ERR("RGB self-test failed: %d", rgb_err);
+        }
     }
 
     int err = myo_ble_client_init();
