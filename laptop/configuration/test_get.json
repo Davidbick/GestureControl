@@ -1,0 +1,7 @@
+{
+  "name": "get_gesture_mapping",
+  "arguments": {
+    "target": "COMPUTER",
+    "gesture": "SWIPE_UP"
+  }
+}

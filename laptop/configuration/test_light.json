@@ -1,0 +1,9 @@
+{
+  "name": "set_gesture_mapping",
+  "arguments": {
+    "target": "LIGHT",
+    "gesture": "SWIPE_RIGHT",
+    "action": "LIGHT_SET_BRIGHTNESS",
+    "amount": 75
+  }
+}
