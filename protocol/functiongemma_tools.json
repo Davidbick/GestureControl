@@ -48,7 +48,9 @@
               "LIGHT_OFF",
               "LIGHT_SET_BRIGHTNESS",
               "LIGHT_BRIGHTNESS_UP",
-              "LIGHT_BRIGHTNESS_DOWN"
+              "LIGHT_BRIGHTNESS_DOWN",
+              "LIGHT_MORE_BLUE",
+              "LIGHT_MORE_GREEN"
             ]
           },
           "key": {
@@ -223,7 +225,9 @@
                     "LIGHT_OFF",
                     "LIGHT_SET_BRIGHTNESS",
                     "LIGHT_BRIGHTNESS_UP",
-                    "LIGHT_BRIGHTNESS_DOWN"
+                    "LIGHT_BRIGHTNESS_DOWN",
+                    "LIGHT_MORE_BLUE",
+                    "LIGHT_MORE_GREEN"
                   ]
                 },
                 "key": {

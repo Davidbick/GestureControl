@@ -230,7 +230,7 @@ static void output_thread(
 
         printk(
             "MC1,%u,%u,%d,%d,%d,%d,"
-            "%d,%d,%d,%d,%d,%d,%u,%u\n",
+            "%d,%d,%d,%d,%d,%d,%u,%u,%u\n",
             frame.sequence,
             frame.timestamp_ms,
             frame.emg.raw[0],
@@ -244,7 +244,8 @@ static void output_thread(
             frame.motion.gyro.y_mdps,
             frame.motion.gyro.z_mdps,
             frame.dropped_total,
-            frame.errors_total);
+            frame.errors_total,
+            frame.orientation_valid ? 1U : 0U);
     }
 }
 

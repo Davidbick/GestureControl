@@ -2,8 +2,7 @@
 #define SWIPE_CONFIG_H
 
 // Generated from training.csv by analyze_swipes.py
-#define SWIPE_THRESHOLD_MDPS 100000.00f
-#define SWIPE_SIMILARITY 0.75000f
+// Onset and similarity thresholds are exported to swipe_tuning.h.
 
 static const float swipe_centers[4][3] = {
     {0.48681577f, 0.20604222f, 0.84885630f}, // UP

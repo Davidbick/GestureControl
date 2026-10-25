@@ -60,6 +60,14 @@ static struct gc_mapping default_mapping(uint8_t gesture)
         case MYO_GESTURE_TENSE:
             mapping.action = GC_ACTION_LIGHT_TOGGLE;
             break;
+        case MYO_GESTURE_FLEX:
+            mapping.action = GC_ACTION_LIGHT_MORE_BLUE;
+            mapping.amount = GC_DEFAULT_BRIGHTNESS_STEP;
+            break;
+        case MYO_GESTURE_EXTEND:
+            mapping.action = GC_ACTION_LIGHT_MORE_GREEN;
+            mapping.amount = GC_DEFAULT_BRIGHTNESS_STEP;
+            break;
         default:
             break;
         }
@@ -126,8 +134,10 @@ static enum gc_status validate_mapping(const struct gc_mapping *m)
         (action == GC_ACTION_MOUSE_DOUBLE_CLICK) ||
         (action == GC_ACTION_KEY_TOGGLE);
     bool light_action =
-        action >= GC_ACTION_LIGHT_TOGGLE &&
-        action <= GC_ACTION_LIGHT_BRIGHTNESS_DOWN;
+        (action >= GC_ACTION_LIGHT_TOGGLE &&
+         action <= GC_ACTION_LIGHT_BRIGHTNESS_DOWN) ||
+        action == GC_ACTION_LIGHT_MORE_BLUE ||
+        action == GC_ACTION_LIGHT_MORE_GREEN;
 
     if ((computer && !computer_action) ||
         (!computer && !light_action)) {
@@ -183,7 +193,9 @@ static enum gc_status validate_mapping(const struct gc_mapping *m)
     }
 
     if (action == GC_ACTION_LIGHT_BRIGHTNESS_UP ||
-        action == GC_ACTION_LIGHT_BRIGHTNESS_DOWN) {
+        action == GC_ACTION_LIGHT_BRIGHTNESS_DOWN ||
+        action == GC_ACTION_LIGHT_MORE_BLUE ||
+        action == GC_ACTION_LIGHT_MORE_GREEN) {
         return m->amount >= 1 && m->amount <= 100
             ? GC_STATUS_OK : GC_STATUS_INVALID_PARAMETER;
     }

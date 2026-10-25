@@ -41,6 +41,8 @@ ACTIONS = {
     "LIGHT_BRIGHTNESS_DOWN": 16,
     "MOUSE_DOUBLE_CLICK": 17,
     "KEY_TOGGLE": 18,
+    "LIGHT_MORE_BLUE": 19,
+    "LIGHT_MORE_GREEN": 20,
 }
 KEYS = {
     "ENTER": 0x28,
@@ -153,7 +155,7 @@ def build_packet(call):
         action = ACTIONS[action_name]
 
         computer_action = 1 <= action <= 10 or action in (17, 18)
-        light_action = 11 <= action <= 16
+        light_action = 11 <= action <= 16 or action in (19, 20)
         if target == "COMPUTER" and light_action:
             raise ValueError("Light action assigned to computer")
         if target == "LIGHT" and computer_action:
@@ -163,7 +165,7 @@ def build_packet(call):
         clicks = {2, 3, 4, 17}
         movement = {5, 6, 7, 8}
         scrolling = {9, 10}
-        brightness = {14, 15, 16}
+        brightness = {14, 15, 16, 19, 20}
 
         if action in (1, 18):
             allowed |= {"key", "modifiers"}
@@ -200,7 +202,7 @@ def build_packet(call):
             allowed.add("amount")
             if action == 14 and "amount" not in args:
                 raise ValueError("LIGHT_SET_BRIGHTNESS requires amount")
-            default = 25 if action in (15, 16) else 0
+            default = 25 if action in (15, 16, 19, 20) else 0
             amount = _integer(args.get("amount", default), "amount",
                               0 if action == 14 else 1, 100)
 

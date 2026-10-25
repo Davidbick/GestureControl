@@ -1,30 +1,35 @@
-
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
     myo_pwm_leds {
         compatible = "pwm-leds";
-
-        // Red LED connected to P0.29.
+        // Verify R/G/B assignment against the real common-anode LED.
         red_pwm: red_pwm {
-            pwms = <&pwm1 0 PWM_USEC(1000)
-                    PWM_POLARITY_INVERTED>;
+            pwms = <&pwm1 0 PWM_USEC(1000) PWM_POLARITY_INVERTED>;
+        };
+        green_pwm: green_pwm {
+            pwms = <&pwm1 1 PWM_USEC(1000) PWM_POLARITY_INVERTED>;
+        };
+        blue_pwm: blue_pwm {
+            pwms = <&pwm1 2 PWM_USEC(1000) PWM_POLARITY_INVERTED>;
         };
     };
 };
 
-// PWM1 channel 0 -> GPIO P0.29.
 &pinctrl {
     myo_pwm1_default: myo_pwm1_default {
         group1 {
-            psels = <NRF_PSEL(PWM_OUT0, 0, 29)>;
+            psels = <NRF_PSEL(PWM_OUT0, 0, 29)>,
+                    <NRF_PSEL(PWM_OUT1, 0, 9)>,
+                    <NRF_PSEL(PWM_OUT2, 0, 2)>;
         };
     };
-
     myo_pwm1_sleep: myo_pwm1_sleep {
         group1 {
-            psels = <NRF_PSEL(PWM_OUT0, 0, 29)>;
+            psels = <NRF_PSEL(PWM_OUT0, 0, 29)>,
+                    <NRF_PSEL(PWM_OUT1, 0, 9)>,
+                    <NRF_PSEL(PWM_OUT2, 0, 2)>;
             low-power-enable;
         };
     };
@@ -32,8 +37,12 @@
 
 &pwm1 {
     status = "okay";
-
     pinctrl-0 = <&myo_pwm1_default>;
     pinctrl-1 = <&myo_pwm1_sleep>;
     pinctrl-names = "default", "sleep";
+};
+
+// Same NFC-pin override used in test_controller_wio for P0.09.
+&uicr {
+    nfct-pins-as-gpios;
 };

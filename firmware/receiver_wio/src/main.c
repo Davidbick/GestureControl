@@ -32,29 +32,48 @@ static const struct gpio_dt_spec led =
     GPIO_DT_SPEC_GET(LED_NODE, gpios);
 
     
-// Hardware PWM output on P0.29.
+// External common-anode RGB LED (active-low PWM).
+// Assumed colors: R=P0.29, G=P0.09, B=P0.02.
 #define RED_PWM_NODE DT_NODELABEL(red_pwm)
+#define GREEN_PWM_NODE DT_NODELABEL(green_pwm)
+#define BLUE_PWM_NODE DT_NODELABEL(blue_pwm)
 
-static const struct pwm_dt_spec red_pwm =
-    PWM_DT_SPEC_GET(RED_PWM_NODE);
+static const struct pwm_dt_spec red_pwm = PWM_DT_SPEC_GET(RED_PWM_NODE);
+static const struct pwm_dt_spec green_pwm = PWM_DT_SPEC_GET(GREEN_PWM_NODE);
+static const struct pwm_dt_spec blue_pwm = PWM_DT_SPEC_GET(BLUE_PWM_NODE);
 
-// Set physical red LED brightness.
-// PWM_POLARITY_INVERTED is configured in app.overlay.
-static int set_red_brightness(uint8_t percent)
+// Color state survives BLE disconnect and normal light toggles.
+static atomic_t green_mix;
+static atomic_t blue_mix;
+
+static int set_channel(const struct pwm_dt_spec *channel, uint8_t percent)
 {
-    if (percent > 100U) {
-        percent = 100U;
-    }
+    if (percent > 100U) percent = 100U;
+    uint32_t pulse = (uint32_t)(
+        ((uint64_t)channel->period * percent) / 100U);
+    return pwm_set_dt(channel, channel->period, pulse);
+}
 
-    uint32_t pulse_ns =
-        (uint32_t)(((uint64_t)red_pwm.period *
-                    percent) / 100U);
+static int set_rgb_output(uint8_t brightness,
+                          uint8_t green, uint8_t blue)
+{
+    if (brightness > 100U) brightness = 100U;
+    if (green > 100U) green = 100U;
+    if (blue > 100U) blue = 100U;
 
-    return pwm_set_dt(
-        &red_pwm,
-        red_pwm.period,
-        pulse_ns
-    );
+    // Each FLEX/EXTEND shifts color away from red.
+    uint8_t dominant = green > blue ? green : blue;
+    uint8_t red = 100U - dominant;
+
+    uint8_t r = (uint8_t)((uint32_t)red * brightness / 100U);
+    uint8_t g = (uint8_t)((uint32_t)green * brightness / 100U);
+    uint8_t b = (uint8_t)((uint32_t)blue * brightness / 100U);
+
+    int err = set_channel(&red_pwm, r);
+    if (err) return err;
+    err = set_channel(&green_pwm, g);
+    if (err) return err;
+    return set_channel(&blue_pwm, b);
 }
 
 // Shared BLE connection state.
@@ -561,6 +580,20 @@ static void execute_light_action(const struct gc_mapping *mapping)
         is_on = brightness > 0;
         break;
 
+    case GC_ACTION_LIGHT_MORE_BLUE: {
+        int next = atomic_get(&blue_mix) + mapping->amount;
+        if (next > 100) next = 100;
+        atomic_set(&blue_mix, next);
+        break;
+    }
+
+    case GC_ACTION_LIGHT_MORE_GREEN: {
+        int next = atomic_get(&green_mix) + mapping->amount;
+        if (next > 100) next = 100;
+        atomic_set(&green_mix, next);
+        break;
+    }
+
     default:
         LOG_WRN("Unsupported light action: %u", action);
         return;
@@ -637,21 +670,20 @@ int main(void)
         &led, GPIO_OUTPUT_INACTIVE);
 
         
-    if (!pwm_is_ready_dt(&red_pwm)) {
-        LOG_ERR("Red LED PWM not ready");
+    if (!pwm_is_ready_dt(&red_pwm) ||
+        !pwm_is_ready_dt(&green_pwm) ||
+        !pwm_is_ready_dt(&blue_pwm)) {
+        LOG_ERR("RGB PWM device not ready");
         return 0;
     }
 
-    // Start with external LED fully OFF.
-    int pwm_err = set_red_brightness(0);
-
+    int pwm_err = set_rgb_output(0, 0, 0);
     if (pwm_err) {
-        LOG_ERR("Initial PWM setup failed: %d",
-                pwm_err);
+        LOG_ERR("RGB PWM initialization failed: %d", pwm_err);
         return 0;
     }
 
-    LOG_INF("Red LED PWM ready on P0.29");
+    LOG_INF("RGB PWM ready; verify physical color pin order");
 
 
     LOG_INF("GestureControl receiver starting");
@@ -696,6 +728,8 @@ int main(void)
     bool previous_fresh = false;
     bool previous_output = false;
     int previous_pwm_percent = -1;
+    int previous_green_mix = -1;
+    int previous_blue_mix = -1;
     uint8_t previous_brightness = 255;
     uint32_t previous_packet = UINT32_MAX;
 
@@ -752,18 +786,22 @@ int main(void)
             requested_percent = 100U;
         }
 
-        // Update PWM only when brightness changes.
-        if ((int)requested_percent != previous_pwm_percent) {
+        // Apply changed brightness or saved color even if disconnected.
+        uint8_t green = (uint8_t)atomic_get(&green_mix);
+        uint8_t blue = (uint8_t)atomic_get(&blue_mix);
 
-            int ret = set_red_brightness(requested_percent);
-
+        if ((int)requested_percent != previous_pwm_percent ||
+            (int)green != previous_green_mix ||
+            (int)blue != previous_blue_mix) {
+            int ret = set_rgb_output(requested_percent, green, blue);
             if (ret) {
-                LOG_ERR("PWM update failed: %d", ret);
+                LOG_ERR("RGB PWM update failed: %d", ret);
             } else {
                 previous_pwm_percent = requested_percent;
-
-                LOG_INF("Red LED PWM: %u%%",
-                        requested_percent);
+                previous_green_mix = green;
+                previous_blue_mix = blue;
+                LOG_INF("RGB brightness=%u%% green=%u%% blue=%u%%",
+                        requested_percent, green, blue);
             }
         }
                 

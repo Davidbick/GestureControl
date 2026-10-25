@@ -25,6 +25,7 @@ SENSOR_FIELDS = [
     "gz_mdps",
     "dropped_total",
     "errors_total",
+    "gate_valid",
 ]
 
 CSV_FIELDS = [
@@ -254,6 +255,16 @@ def main():
     output.parent.mkdir(
         parents=True, exist_ok=True
     )
+
+    # Refuse to append gate-aware samples beneath a legacy CSV header.
+    if output.exists() and output.stat().st_size:
+        with output.open(newline="", encoding="utf-8") as existing:
+            old_header = next(csv.reader(existing), [])
+        if old_header != CSV_FIELDS:
+            parser.error(
+                "Existing CSV has a different sensor format. "
+                "Choose a new output filename for Phase 4 data."
+            )
 
     needs_header = (
         not output.exists()
