@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/uuid.h>
 
 #include "myo_ble.h"
+#include "gesture_config.h"
 #include "oled.h"
 
 LOG_MODULE_REGISTER(receiver, LOG_LEVEL_INF);
@@ -315,6 +316,30 @@ BT_GATT_SERVICE_DEFINE(myo_service,
         BT_GATT_PERM_WRITE,
         NULL,
         write_brightness,
+        NULL),
+
+    BT_GATT_CHARACTERISTIC(
+        BT_UUID_DECLARE_128(GC_CONFIG_COMMAND_UUID_BYTES),
+        BT_GATT_CHRC_WRITE,
+        BT_GATT_PERM_WRITE,
+        NULL,
+        gc_config_write,
+        NULL),
+
+    BT_GATT_CHARACTERISTIC(
+        BT_UUID_DECLARE_128(GC_CONFIG_RESPONSE_UUID_BYTES),
+        BT_GATT_CHRC_READ,
+        BT_GATT_PERM_READ,
+        gc_config_read_response,
+        NULL,
+        NULL),
+
+    BT_GATT_CHARACTERISTIC(
+        BT_UUID_DECLARE_128(GC_CONFIG_INFO_UUID_BYTES),
+        BT_GATT_CHRC_READ,
+        BT_GATT_PERM_READ,
+        gc_config_read_info,
+        NULL,
         NULL)
 );
 
@@ -528,6 +553,8 @@ int main(void)
 
         oled_show(&initial_status);
     }
+
+    gc_config_init(GC_TARGET_LIGHT);
 
     int err = bt_enable(NULL);
 

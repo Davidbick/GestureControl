@@ -7,6 +7,7 @@ project(receiver_nrf)
 target_sources(app PRIVATE 
     src/main.c
     src/usb_hid.c
+    ../common/gesture_config.c
 )
 
 target_include_directories(app PRIVATE
