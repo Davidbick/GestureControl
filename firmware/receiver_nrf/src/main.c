@@ -12,6 +12,7 @@
 #include <string.h>
 #include "myo_ble.h"
 #include "gesture_config.h"
+#include "receiver_links.h"
 #include "usb_hid.h"
 
 
@@ -34,6 +35,7 @@ enum led_control_mode {
 
 static atomic_t link_up;
 static atomic_t advertising_needed;
+static struct gc_receiver_links rx_links;
 static atomic_t rx_valid;
 static atomic_t last_rx_ms;
 static atomic_t led_mode;
@@ -53,6 +55,56 @@ K_MSGQ_DEFINE(
     8,
     4
 );
+
+/* Called on the first validated gesture-side GATT write. */
+static void begin_gesture_session(void);
+
+static bool accept_gesture_peer(struct bt_conn *conn)
+{
+    enum gc_claim_result result =
+        gc_links_claim(&rx_links, conn, GC_PEER_GESTURE);
+    if (result == GC_CLAIM_DENIED) {
+        LOG_WRN("Rejected gesture write from other BLE peer");
+        return false;
+    }
+    if (result == GC_CLAIM_NEW) {
+        begin_gesture_session();
+    }
+    return true;
+}
+
+static ssize_t config_command_write(
+    struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+    if (gc_links_claim(&rx_links, conn, GC_PEER_CONFIG) ==
+        GC_CLAIM_DENIED) {
+        return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+    }
+    return gc_config_write(conn, attr, buf, len, offset, flags);
+}
+
+static ssize_t config_response_read(
+    struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset)
+{
+    if (gc_links_claim(&rx_links, conn, GC_PEER_CONFIG) ==
+        GC_CLAIM_DENIED) {
+        return BT_GATT_ERR(BT_ATT_ERR_READ_NOT_PERMITTED);
+    }
+    return gc_config_read_response(conn, attr, buf, len, offset);
+}
+
+static ssize_t config_info_read(
+    struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset)
+{
+    if (gc_links_claim(&rx_links, conn, GC_PEER_CONFIG) ==
+        GC_CLAIM_DENIED) {
+        return BT_GATT_ERR(BT_ATT_ERR_READ_NOT_PERMITTED);
+    }
+    return gc_config_read_info(conn, attr, buf, len, offset);
+}
 
 // Actuation state, owned by main thread.
 static bool gesture_led_on;
@@ -96,7 +148,6 @@ static ssize_t write_state(
     uint16_t offset,
     uint8_t flags)
 {
-    ARG_UNUSED(conn);
     ARG_UNUSED(attr);
 
     if (offset != 0 || len != 1) {
@@ -112,6 +163,10 @@ static ssize_t write_state(
 
     if (state != MYO_VALID && state != MYO_INVALID) {
         return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+    }
+
+    if (!accept_gesture_peer(conn)) {
+        return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
     }
 
     atomic_set(&rx_valid, state == MYO_VALID);
@@ -134,7 +189,6 @@ static ssize_t write_gesture(
     uint16_t offset,
     uint8_t flags)
 {
-    ARG_UNUSED(conn);
     ARG_UNUSED(attr);
 
     if (offset != 0 ||
@@ -157,6 +211,10 @@ static ssize_t write_gesture(
 
         return BT_GATT_ERR(
             BT_ATT_ERR_VALUE_NOT_ALLOWED);
+    }
+
+    if (!accept_gesture_peer(conn)) {
+        return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
     }
 
     event.session =
@@ -205,14 +263,14 @@ BT_GATT_SERVICE_DEFINE(myo_service,
         BT_GATT_CHRC_WRITE,
         BT_GATT_PERM_WRITE,
         NULL,
-        gc_config_write,
+        config_command_write,
         NULL),
 
     BT_GATT_CHARACTERISTIC(
         BT_UUID_DECLARE_128(GC_CONFIG_RESPONSE_UUID_BYTES),
         BT_GATT_CHRC_READ,
         BT_GATT_PERM_READ,
-        gc_config_read_response,
+        config_response_read,
         NULL,
         NULL),
 
@@ -220,7 +278,7 @@ BT_GATT_SERVICE_DEFINE(myo_service,
         BT_UUID_DECLARE_128(GC_CONFIG_INFO_UUID_BYTES),
         BT_GATT_CHRC_READ,
         BT_GATT_PERM_READ,
-        gc_config_read_info,
+        config_info_read,
         NULL,
         NULL)
 );
@@ -251,6 +309,10 @@ static int start_advertising(void)
         return 0;
     }
 
+    if (err == -ENOMEM) {
+        /* Connection resources not yet recycled. */
+        return err;
+    }
     if (err) {
         LOG_WRN("Advertising failed: %d, retrying", err);
         return err;
@@ -260,49 +322,56 @@ static int start_advertising(void)
     return 0;
 }
 
-static void connected(
-    struct bt_conn *conn,
-    uint8_t err)
+static void begin_gesture_session(void)
+{
+    atomic_inc(&session_epoch);
+    k_msgq_purge(&gesture_queue);
+    atomic_set(&rx_valid, 0);
+    atomic_set(&last_rx_ms, 0);
+    atomic_set(&link_up, 1);
+    LOG_INF("MyoPC gesture controller active");
+}
+
+static void connected(struct bt_conn *conn, uint8_t err)
 {
     ARG_UNUSED(conn);
-
     if (err) {
         LOG_ERR("Connection failed: %u", err);
         atomic_set(&advertising_needed, 1);
         return;
     }
-
-atomic_set(&advertising_needed, 0);
-
-    k_msgq_purge(&gesture_queue);
-
-    atomic_inc(&session_epoch);
-    atomic_set(&link_up, 1);
-    atomic_set(&rx_valid, 0);
-
-    LOG_INF("Wearable connected");
+    gc_links_connected(&rx_links);
+    atomic_set(&advertising_needed, 1);
+    LOG_INF("BLE peer connected (%d/%d)",
+            gc_links_count(&rx_links), CONFIG_BT_MAX_CONN);
 }
 
-static void disconnected(
-    struct bt_conn *conn,
-    uint8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-    ARG_UNUSED(conn);
+    bool gesture_lost = gc_links_disconnected(&rx_links, conn);
+    if (gesture_lost) {
+        atomic_set(&link_up, 0);
+        atomic_set(&rx_valid, 0);
+        atomic_inc(&session_epoch);
+        k_msgq_purge(&gesture_queue);
+        LOG_INF("Gesture controller disconnected");
+    } else {
+        LOG_INF("Configuration/unclaimed peer disconnected");
+    }
+    LOG_INF("BLE disconnect reason: %u", reason);
+    atomic_set(&advertising_needed, 1);
+}
 
-    atomic_set(&link_up, 0);
-    atomic_set(&rx_valid, 0);
-
-    atomic_inc(&session_epoch);
-    k_msgq_purge(&gesture_queue);
-
-    LOG_INF("Disconnected: %u", reason);
-
+static void recycled(void)
+{
+    /* Retry advertising in main loop after a connection is freed. */
     atomic_set(&advertising_needed, 1);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
+    .recycled = recycled,
 };
 
 // Gesture actuation dispatcher
@@ -427,6 +496,8 @@ int main(void)
         LOG_ERR("USB HID init failed: %d", err);
     }
 
+    gc_links_init(&rx_links);
+
     err = bt_enable(NULL);
 
     if (err) {
@@ -453,7 +524,7 @@ int main(void)
         uint32_t now = k_uptime_get_32();
 
         if (atomic_get(&advertising_needed) &&
-            !atomic_get(&link_up) &&
+            gc_links_count(&rx_links) < CONFIG_BT_MAX_CONN &&
             (int32_t)(now - next_adv_retry_ms) >= 0) {
 
             next_adv_retry_ms = now + ADV_RETRY_MS;
