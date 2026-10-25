@@ -66,6 +66,7 @@ static atomic_t session_epoch;
 // Actual light state, independent of orientation.
 static atomic_t light_on;
 static atomic_t brightness_pct = ATOMIC_INIT(50);
+static atomic_t last_nonzero_brightness = ATOMIC_INIT(50);
 static atomic_t brightness_seq_seen;
 static atomic_t last_brightness_seq;
 
@@ -272,6 +273,9 @@ static ssize_t write_brightness(
     atomic_set(&last_brightness_seq, packet.sequence);
     atomic_set(&brightness_seq_seen, 1);
     atomic_set(&brightness_pct, packet.percent);
+    if (packet.percent > 0) {
+        atomic_set(&last_nonzero_brightness, packet.percent);
+    }
         
     record_oled_packet(
         OLED_RX_BRIGHTNESS,
@@ -403,6 +407,7 @@ static void connected(
 
     // Default to 50% until a brightness packet arrives.
     atomic_set(&brightness_pct, 50);
+    atomic_set(&last_nonzero_brightness, 50);
     atomic_set(&brightness_seq_seen, 0);
     atomic_set(&last_brightness_seq, 0);
     atomic_set(&link_up, 1);
@@ -420,6 +425,7 @@ static void disconnected(
     atomic_set(&rx_valid, 0);
     atomic_set(&light_on, 0);
     atomic_set(&brightness_pct, 50);
+    atomic_set(&last_nonzero_brightness, 50);
     atomic_set(&brightness_seq_seen, 0);
 
     // Invalidate packets from previous connection.
@@ -436,6 +442,71 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
 };
+
+static void execute_light_action(const struct gc_mapping *mapping)
+{
+    uint8_t action = mapping->action;
+    int brightness = atomic_get(&brightness_pct);
+    bool is_on = atomic_get(&light_on) != 0;
+
+    switch (action) {
+    case GC_ACTION_NONE:
+        return;
+
+    case GC_ACTION_LIGHT_TOGGLE:
+        is_on = !is_on;
+        if (is_on && brightness == 0) {
+            brightness = atomic_get(&last_nonzero_brightness);
+        }
+        break;
+
+    case GC_ACTION_LIGHT_ON:
+        is_on = true;
+        if (brightness == 0) {
+            brightness = atomic_get(&last_nonzero_brightness);
+        }
+        break;
+
+    case GC_ACTION_LIGHT_OFF:
+        is_on = false;
+        break;
+
+    case GC_ACTION_LIGHT_SET_BRIGHTNESS:
+        brightness = mapping->amount;
+        is_on = brightness > 0;
+        break;
+
+    case GC_ACTION_LIGHT_BRIGHTNESS_UP:
+        brightness += mapping->amount;
+        if (brightness > 100) {
+            brightness = 100;
+        }
+        is_on = brightness > 0;
+        break;
+
+    case GC_ACTION_LIGHT_BRIGHTNESS_DOWN:
+        brightness -= mapping->amount;
+        if (brightness < 0) {
+            brightness = 0;
+        }
+        is_on = brightness > 0;
+        break;
+
+    default:
+        LOG_WRN("Unsupported light action: %u", action);
+        return;
+    }
+
+    if (brightness > 0) {
+        atomic_set(&last_nonzero_brightness, brightness);
+    }
+
+    atomic_set(&brightness_pct, brightness);
+    atomic_set(&light_on, is_on ? 1 : 0);
+
+    LOG_INF("Light action=%u on=%u brightness=%u",
+            action, is_on ? 1 : 0, brightness);
+}
 
 // Process received gestures outside BLE callbacks.
 static void process_gesture(
@@ -470,39 +541,20 @@ static void process_gesture(
             gesture,
             sequence);
 
-    switch (gesture) {
-    case MYO_GESTURE_TENSE: {
-
-        // Extra protection against repeated toggles.
+    if (gesture == MYO_GESTURE_TENSE) {
         if (tense_seen &&
             (uint32_t)(event->timestamp_ms -
                        last_tense_ms) < TENSE_GUARD_MS) {
-
             LOG_INF("TENSE ignored: cooldown");
             return;
         }
 
         tense_seen = true;
         last_tense_ms = event->timestamp_ms;
-
-        bool next = !atomic_get(&light_on);
-        atomic_set(&light_on, next);
-
-        LOG_INF("LIGHT: %s", next ? "ON" : "OFF");
-        break;
     }
 
-    case MYO_GESTURE_SWIPE_UP:
-    case MYO_GESTURE_SWIPE_DOWN:
-    case MYO_GESTURE_SWIPE_LEFT:
-    case MYO_GESTURE_SWIPE_RIGHT:
-        // Recognized and logged.
-        // Room-specific actions can be mapped later.
-        break;
-
-    default:
-        break;
-    }
+    struct gc_mapping mapping = gc_config_get(gesture);
+    execute_light_action(&mapping);
 }
 
 int main(void)
