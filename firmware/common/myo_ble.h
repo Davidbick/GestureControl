@@ -46,7 +46,9 @@ enum myo_gesture {
     MYO_GESTURE_SWIPE_DOWN = 2,
     MYO_GESTURE_SWIPE_LEFT = 3,
     MYO_GESTURE_SWIPE_RIGHT = 4,
-    MYO_GESTURE_TENSE = 5
+    MYO_GESTURE_TENSE = 5,
+    MYO_GESTURE_EXTEND = 6, /* EMG0-dominant flex */
+    MYO_GESTURE_FLEX = 7    /* EMG1-dominant flex */
 };
 
 // Two-byte BLE packet.
@@ -70,7 +72,7 @@ static inline bool myo_brightness_valid(uint8_t percent)
 static inline bool myo_gesture_valid(uint8_t gesture)
 {
     return gesture >= MYO_GESTURE_SWIPE_UP &&
-           gesture <= MYO_GESTURE_TENSE;
+           gesture <= MYO_GESTURE_FLEX;
 }
 
 #endif

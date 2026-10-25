@@ -1,0 +1,40 @@
+{
+  "target": "COMPUTER",
+  "mappings": [
+    {
+      "gesture": "SWIPE_UP",
+      "action": "KEY_TOGGLE",
+      "key": "W"
+    },
+    {
+      "gesture": "SWIPE_DOWN",
+      "action": "KEY_TAP",
+      "key": "S"
+    },
+    {
+      "gesture": "SWIPE_LEFT",
+      "action": "KEY_TAP",
+      "key": "A"
+    },
+    {
+      "gesture": "SWIPE_RIGHT",
+      "action": "KEY_TAP",
+      "key": "D"
+    },
+    {
+      "gesture": "TENSE",
+      "action": "KEY_TAP",
+      "key": "SPACE"
+    },
+    {
+      "gesture": "EXTEND",
+      "action": "KEY_TAP",
+      "key": "E"
+    },
+    {
+      "gesture": "FLEX",
+      "action": "KEY_TAP",
+      "key": "F"
+    }
+  ]
+}

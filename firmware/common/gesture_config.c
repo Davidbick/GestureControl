@@ -17,7 +17,7 @@ static uint8_t device_info[4];
 static bool valid_gesture(uint8_t gesture)
 {
     return gesture >= MYO_GESTURE_SWIPE_UP &&
-           gesture <= MYO_GESTURE_TENSE;
+           gesture <= MYO_GESTURE_FLEX;
 }
 
 static struct gc_mapping default_mapping(uint8_t gesture)

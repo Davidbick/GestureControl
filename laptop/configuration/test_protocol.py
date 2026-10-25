@@ -72,6 +72,30 @@ class PacketTests(unittest.TestCase):
                  gesture="TENSE"))
         self.assertEqual((packet[2], packet[4]), (1, 5))
 
+    def test_extend_and_flex_configuration(self):
+        packet, target = ble_config.build_packet(
+            call("set_gesture_mapping", target="COMPUTER",
+                 gesture="EXTEND", action="KEY_TOGGLE", key="E"))
+        self.assertEqual((target, packet[4], packet[5]),
+                         ("COMPUTER", 6, 18))
+        self.assertEqual(len(packet), 12)
+
+        packet, target = ble_config.build_packet(
+            call("set_gesture_mapping", target="LIGHT",
+                 gesture="FLEX", action="LIGHT_TOGGLE"))
+        self.assertEqual((target, packet[4], packet[5]),
+                         ("LIGHT", 7, 11))
+        self.assertEqual(len(packet), 12)
+
+    def test_get_and_reset_new_gestures(self):
+        packet, _ = ble_config.build_packet(
+            call("get_gesture_mapping", target="COMPUTER", gesture="FLEX"))
+        self.assertEqual((packet[2], packet[4]), (1, 7))
+
+        packet, _ = ble_config.build_packet(
+            call("reset_gesture_mapping", target="LIGHT", gesture="EXTEND"))
+        self.assertEqual((packet[2], packet[4]), (3, 6))
+
     def test_wrong_target(self):
         with self.assertRaises(ValueError):
             ble_config.build_packet(
@@ -119,18 +143,26 @@ class BatchTests(unittest.TestCase):
                 {"gesture": "SWIPE_LEFT", "action": "KEY_TAP", "key": "A"},
                 {"gesture": "SWIPE_RIGHT", "action": "KEY_TAP", "key": "D"},
                 {"gesture": "TENSE", "action": "KEY_TAP", "key": "SPACE"},
+                {"gesture": "EXTEND", "action": "KEY_TAP", "key": "E"},
+                {"gesture": "FLEX", "action": "KEY_TAP", "key": "F"},
             ],
         }
 
-    def test_build_five_mappings(self):
+    def test_build_seven_mappings(self):
         target, requests = ble_config.build_batch(self.sample())
         self.assertEqual(target, "COMPUTER")
-        self.assertEqual(len(requests), 5)
+        self.assertEqual(len(requests), 7)
         for request in requests:
             self.assertEqual(len(request["set_packet"]), 12)
             self.assertEqual(len(request["get_packet"]), 12)
             self.assertEqual(request["set_packet"][2], 2)
             self.assertEqual(request["get_packet"][2], 1)
+
+    def test_five_mapping_batch_still_valid(self):
+        batch = self.sample()
+        batch["mappings"] = batch["mappings"][:5]
+        _, requests = ble_config.build_batch(batch)
+        self.assertEqual(len(requests), 5)
 
     def test_duplicate_rejected(self):
         batch = self.sample()
@@ -151,7 +183,7 @@ class BatchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ble_config.build_batch({"target": "COMPUTER", "mappings": []})
 
-    def test_all_five_verified_one_connection(self):
+    def test_all_seven_verified_one_connection(self):
         batch = self.sample()
         calls = {"connect": 0, "writes": 0}
         current = {}
@@ -179,7 +211,7 @@ class BatchTests(unittest.TestCase):
 
             async def read_gatt_char(self, uuid):
                 if uuid == ble_config.UUID_INFO:
-                    return bytes([1, 1, 5, 3])
+                    return bytes([1, 1, 7, 3])
                 req = self.request
                 mapping = current.get(req[4], bytes(6))
                 return bytes([1, req[1], req[2], 1, req[4], 0]) + mapping
@@ -191,9 +223,9 @@ class BatchTests(unittest.TestCase):
             result = asyncio.run(ble_config.execute_batch(batch))
 
         self.assertTrue(result["success"], result)
-        self.assertEqual(result["verified"], 5)
+        self.assertEqual(result["verified"], 7)
         self.assertEqual(calls["connect"], 1)
-        self.assertEqual(calls["writes"], 10)
+        self.assertEqual(calls["writes"], 14)
 
 if __name__ == "__main__":
     unittest.main()

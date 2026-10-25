@@ -178,6 +178,10 @@ static const char *gesture_name(uint8_t gesture)
         return "SWIPE_RIGHT";
     case MYO_GESTURE_TENSE:
         return "TENSE";
+    case MYO_GESTURE_EXTEND:
+        return "EXTEND";
+    case MYO_GESTURE_FLEX:
+        return "FLEX";
     default:
         return "UNKNOWN";
     }

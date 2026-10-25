@@ -17,6 +17,8 @@ GESTURES = {
     "SWIPE_LEFT": 3,
     "SWIPE_RIGHT": 4,
     "TENSE": 5,
+    "EXTEND": 6,
+    "FLEX": 7,
     "ALL": 0,
 }
 ACTIONS = {
@@ -258,6 +260,11 @@ async def execute_tool_call(call):
         info = bytes(await client.read_gatt_char(UUID_INFO))
         if len(info) != 4 or info[0] != VERSION or info[1] != TARGETS[target]:
             raise RuntimeError("Receiver protocol version or target mismatch")
+        if packet[4] > info[2]:
+            raise RuntimeError(
+                f"Receiver supports gesture IDs 1-{info[2]}, "
+                f"but requested gesture ID {packet[4]}. Update receiver firmware."
+            )
 
         await client.write_gatt_char(UUID_COMMAND, packet, response=True)
         response = bytes(await client.read_gatt_char(UUID_RESPONSE))
@@ -266,7 +273,7 @@ async def execute_tool_call(call):
 
 
 def build_batch(data):
-    """Prevalidate 1-5 SET mappings, with a readback GET for each."""
+    """Prevalidate 1-7 SET mappings, with a readback GET for each."""
     if not isinstance(data, dict) or set(data) != {"target", "mappings"}:
         raise ValueError("Batch requires exactly target and mappings")
 
@@ -274,8 +281,8 @@ def build_batch(data):
     mappings = data["mappings"]
     if not isinstance(target, str) or target not in TARGETS:
         raise ValueError(f"Unknown target: {target}")
-    if not isinstance(mappings, list) or not 1 <= len(mappings) <= 5:
-        raise ValueError("Batch must contain 1 to 5 mappings")
+    if not isinstance(mappings, list) or not 1 <= len(mappings) <= 7:
+        raise ValueError("Batch must contain 1 to 7 mappings")
 
     seen = set()
     requests = []
@@ -341,6 +348,16 @@ async def execute_batch(data):
                 or info[1] != TARGETS[target]
             ):
                 raise RuntimeError("Receiver protocol version or target mismatch")
+
+            required_gesture_id = max(
+                entry["set_packet"][4] for entry in requests
+            )
+            if required_gesture_id > info[2]:
+                raise RuntimeError(
+                    f"Receiver supports gesture IDs 1-{info[2]}, "
+                    f"but this batch requires gesture ID {required_gesture_id}. "
+                    "Update receiver firmware."
+                )
 
             for index, entry in enumerate(requests, start=1):
                 gesture = entry["gesture"]
