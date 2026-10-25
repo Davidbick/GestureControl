@@ -16,7 +16,4 @@ int wio_rgb_init(void);
 int wio_rgb_set_channel(enum wio_rgb_channel channel, uint8_t percent);
 int wio_rgb_all_off(void);
 
-/* Boot-time pin/color/brightness test; ends with all channels off. */
-int wio_rgb_self_test(void);
-
 #endif
